@@ -27,10 +27,8 @@ O aplicație **single-file** (un singur `index.html`) cu:
 
 ## 🚀 Cum rulezi
 
-Descarcă `index.html` și deschide-l direct în browser. Atât.
-
-Sau vizualizează live pe **GitHub Pages**:
-`https://<username>.github.io/<repo>/`
+Deschide pagina 
+`https://c0m3tttt.github.io/ldmoncs/`
 
 ---
 
@@ -38,8 +36,7 @@ Sau vizualizează live pe **GitHub Pages**:
 
 | | |
 |---|---|
-| **WiFi AP** | `RoboLineFollower` / `robot1234` |
-| **IP robot** | `192.168.4.1` |
+| **WiFi AP** | `RoboLineFollower`  |
 | **Control** | D-pad, taste WASD, mod AUTO |
 | **Video** | Stream ESP32-CAM MJPEG |
 
