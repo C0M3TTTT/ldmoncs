@@ -1,0 +1,4086 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laboratorul de Mecanică · MECHLAB</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN SYSTEM — DARK COSMOS
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:       #070b14;
+      --bg2:      #0d1526;
+      --bg3:      #111d35;
+      --surface:  rgba(255,255,255,0.04);
+      --border:   rgba(255,255,255,0.08);
+      --border2:  rgba(91,192,255,0.2);
+      --blue:     #3b9eff;
+      --blue2:    #0f6fff;
+      --cyan:     #00d4ff;
+      --orange:   #ff7b2e;
+      --green:    #2ecc8b;
+      --red:      #ff4757;
+      --text:     #e8f0ff;
+      --muted:    #6b7fa3;
+      --mono:     'DM Mono', monospace;
+      --head:     'Syne', sans-serif;
+      --body:     'Nunito', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated starfield */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 0%, rgba(0,100,200,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,180,140,0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── CANVAS STARS ─── */
+    #starCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    /* ─── NAVIGATION ─── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(7,11,20,0.85);
+      backdrop-filter: blur(20px) saturate(1.5);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--blue2), var(--cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 0 20px rgba(59,158,255,0.35);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes logoPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(59,158,255,0.35); }
+      50% { box-shadow: 0 0 30px rgba(59,158,255,0.6), 0 0 50px rgba(0,212,255,0.2); }
+    }
+
+    .logo-text {
+      font-family: var(--head);
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo-text span { color: var(--cyan); }
+    .logo-sub {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: -2px;
+    }
+
+    /* Desktop nav */
+    .desktop-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .nav-btn {
+      position: relative;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: var(--muted);
+      transition: all 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .nav-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 20px;
+      height: 2px;
+      background: var(--cyan);
+      border-radius: 2px;
+      transition: transform 0.2s;
+    }
+
+    .nav-btn:hover { color: var(--text); background: var(--surface); }
+    .nav-btn.active { color: var(--cyan); }
+    .nav-btn.active::after { transform: translateX(-50%) scaleX(1); }
+
+    /* Mobile menu btn */
+    .mobile-menu-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+
+    /* Mobile drawer */
+    .mobile-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 150;
+    }
+    .mobile-drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .mobile-drawer {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100dvh;
+      width: min(85vw, 300px);
+      background: var(--bg2);
+      border-right: 1px solid var(--border2);
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+      z-index: 160;
+      display: flex;
+      flex-direction: column;
+    }
+    .mobile-drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .drawer-close {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .mobile-drawer-nav {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .mobile-nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: left;
+    }
+    .mobile-nav-btn:hover { background: var(--surface); color: var(--text); }
+    .mobile-nav-btn.active { background: rgba(59,158,255,0.1); border-color: rgba(59,158,255,0.25); color: var(--cyan); }
+    .mobile-nav-btn .nav-icon { font-size: 1.1rem; }
+
+    @media(max-width: 767px) {
+      .desktop-nav { display: none; }
+      .mobile-menu-btn { display: flex; }
+    }
+
+    /* ─── PANELS ─── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    main {
+      position: relative;
+      z-index: 10;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 6rem;
+    }
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: rgba(255,255,255,0.13); }
+
+    .card-glow {
+      background: linear-gradient(135deg, rgba(59,158,255,0.06), rgba(0,212,255,0.04));
+      border-color: var(--border2);
+    }
+
+    .card-orange {
+      background: linear-gradient(135deg, rgba(255,123,46,0.08), rgba(255,70,0,0.04));
+      border-color: rgba(255,123,46,0.25);
+    }
+
+    /* ─── SECTION HEADERS ─── */
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.3rem 0.85rem;
+      background: rgba(59,158,255,0.1);
+      border: 1px solid rgba(59,158,255,0.25);
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--cyan);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: var(--head);
+      font-weight: 800;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--text);
+    }
+    .section-title .accent { color: var(--cyan); }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin-top: 0.75rem;
+    }
+
+    /* ─── BUTTONS ─── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, var(--blue2), var(--blue));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(59,158,255,0.3);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(59,158,255,0.45); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.08); border-color: var(--border2); }
+
+    .btn-orange {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(135deg, #ff7b2e, #ff4400);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(255,123,46,0.3);
+    }
+    .btn-orange:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(255,123,46,0.5); }
+
+    /* ─── FORMULA BOX ─── */
+    .formula {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 10px;
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      color: var(--cyan);
+      letter-spacing: 0.02em;
+    }
+
+    .formula-lg {
+      display: inline-block;
+      padding: 0.85rem 1.5rem;
+      background: rgba(0,212,255,0.06);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 12px;
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      color: var(--cyan);
+    }
+
+    /* ─── STAT CHIPS ─── */
+    .stat-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      text-align: center;
+    }
+    .stat-chip .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      font-family: var(--mono);
+      margin-bottom: 0.3rem;
+    }
+    .stat-chip .value {
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--cyan);
+    }
+
+    /* ─── SLIDERS ─── */
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--cyan);
+      border: 2px solid var(--bg);
+      box-shadow: 0 0 10px rgba(0,212,255,0.5);
+      transition: transform 0.15s;
+    }
+    input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    input[type=range].orange-range::-webkit-slider-thumb { background: var(--orange); box-shadow: 0 0 10px rgba(255,123,46,0.5); }
+
+    /* ─── LESSON TABS ─── */
+    .lesson-tab {
+      padding: 0.65rem 1.25rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--body);
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lesson-tab.active {
+      background: linear-gradient(135deg, var(--blue2), var(--blue));
+      border-color: transparent;
+      color: white;
+      box-shadow: 0 4px 15px rgba(59,158,255,0.3);
+    }
+    .lesson-tab:not(.active):hover { border-color: var(--border2); color: var(--text); }
+
+    /* ─── GRID BG ─── */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(59,158,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,158,255,0.04) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    /* ─── QUIZ ─── */
+    .quiz-option {
+      width: 100%;
+      text-align: left;
+      padding: 0.9rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .quiz-option:hover:not(:disabled) { border-color: var(--border2); background: rgba(59,158,255,0.06); }
+    .quiz-option.correct { background: rgba(46,204,139,0.12) !important; border-color: var(--green) !important; color: var(--green) !important; }
+    .quiz-option.wrong { background: rgba(255,71,87,0.12) !important; border-color: var(--red) !important; color: var(--red) !important; }
+
+    /* ─── GAME FRAME ─── */
+    .game-frame-wrap {
+      width: 100%;
+      height: calc(100dvh - 140px);
+      min-height: 560px;
+      overflow: hidden;
+      border-radius: 14px;
+      background: #050d1a;
+      border: 1px solid var(--border2);
+    }
+    .game-frame {
+      width: 100%; height: 100%;
+      border: 0; display: block;
+    }
+    @media(max-width: 768px) {
+      .game-frame-wrap { height: calc(100dvh - 96px); min-height: 640px; }
+    }
+
+    /* ─── CHARTS ─── */
+    .chart-container { width: 100%; max-width: 420px; height: 260px; margin: 0 auto; position: relative; }
+    .chart-container.chart-small { max-width: 360px; height: 220px; }
+    @media(max-width: 768px) {
+      .chart-container { max-width: 100%; height: 220px; }
+      .chart-container.chart-small { height: 180px; }
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100vh); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.9; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes shimmer {
+      from { background-position: -200% 0; }
+      to { background-position: 200% 0; }
+    }
+
+    .panel.active > * {
+      animation: fadeUp 0.4s ease both;
+    }
+    .panel.active > *:nth-child(2) { animation-delay: 0.05s; }
+    .panel.active > *:nth-child(3) { animation-delay: 0.1s; }
+    .panel.active > *:nth-child(4) { animation-delay: 0.15s; }
+
+    /* ─── HOME HERO ─── */
+    .hero-glow {
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(59,158,255,0.12) 0%, transparent 70%);
+      top: -100px; right: -100px;
+      pointer-events: none;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+    .feature-card {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .feature-card:hover { border-color: var(--border2); transform: translateX(4px); }
+    .feature-icon {
+      width: 40px; height: 40px; flex-shrink: 0;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    /* ─── INFO CHIPS ─── */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.875rem;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .ik { color: var(--muted); }
+    .info-row .iv { font-family: var(--mono); color: var(--orange); font-weight: 500; }
+
+    /* ─── PROBLEMS ─── */
+    details summary {
+      cursor: pointer;
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+      transition: color 0.18s;
+    }
+    details summary::before { content: '▶'; font-size: 0.6rem; transition: transform 0.2s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    details summary:hover { color: var(--blue); }
+    details p { padding: 0.75rem; background: rgba(59,158,255,0.06); border-radius: 8px; margin-top: 0.5rem; font-family: var(--mono); font-size: 0.9rem; color: var(--text); border-left: 2px solid var(--cyan); }
+
+    /* ─── LAB STATUS ─── */
+    .lab-status {
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .lab-status.idle { background: rgba(107,127,163,0.15); color: var(--muted); border: 1px solid rgba(107,127,163,0.2); }
+    .lab-status.running { background: rgba(46,204,139,0.15); color: var(--green); border: 1px solid rgba(46,204,139,0.3); }
+    .lab-status.paused { background: rgba(255,123,46,0.15); color: var(--orange); border: 1px solid rgba(255,123,46,0.3); }
+    .lab-status.done { background: rgba(59,158,255,0.15); color: var(--blue); border: 1px solid rgba(59,158,255,0.3); }
+
+    /* ─── CHART TABS ─── */
+    .chart-tab-btn {
+      padding: 0.35rem 0.85rem;
+      border-radius: 7px;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .chart-tab-btn.active { background: rgba(59,158,255,0.12); border-color: rgba(59,158,255,0.3); color: var(--cyan); }
+    .chart-tab-btn:hover:not(.active) { color: var(--text); }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      main { padding: 1rem 1rem 5rem; }
+
+      /* Hero card */
+      .hero-grid { grid-template-columns: 1fr !important; }
+      .hero-author { display: none !important; }
+
+      /* All inline grids with fixed columns → single column */
+      [style*="grid-template-columns: 1fr 320px"],
+      [style*="grid-template-columns: 1fr 300px"],
+      [style*="grid-template-columns: 340px 1fr"],
+      [style*="grid-template-columns: 1fr auto"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* 3-col → 1-col */
+      [style*="grid-template-columns: repeat(3, 1fr)"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* 4-col stats → 2-col */
+      [style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+
+      /* Section titles */
+      .section-title { font-size: 1.8rem !important; }
+
+      /* Formula large → smaller */
+      .formula-lg { font-size: 1.1rem !important; padding: 0.6rem 1rem !important; }
+
+      /* Card padding */
+      .card[style*="padding: 3rem"],
+      .card[style*="padding: 2rem 2.5rem"] { padding: 1.25rem !important; }
+
+      /* Quiz sidebar → goes below */
+      #quiz > [style*="grid-template-columns: 1fr 300px"] {
+        grid-template-columns: 1fr !important;
+      }
+      /* Lab controls sidebar → goes below */
+      #lab > [style*="grid-template-columns: 340px 1fr"] {
+        grid-template-columns: 1fr !important;
+      }
+      /* Lesson grids */
+      #lesson-mru [style*="grid-template-columns: 1fr 320px"],
+      #lesson-mruv [style*="grid-template-columns: 1fr 300px"] {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Score display smaller */
+      .score-display { font-size: 2.8rem !important; }
+
+      /* Stat chip value smaller */
+      .stat-chip .value { font-size: 1.1rem !important; }
+
+      /* Buttons full width on small screens */
+      .btn-primary, .btn-ghost, .btn-orange {
+        width: 100%; justify-content: center;
+      }
+      /* But not small inline buttons */
+      .btn-primary[style*="padding:0.35rem"],
+      .btn-ghost[style*="padding:0.35rem"],
+      .btn-orange[style*="padding:0.35rem"],
+      .btn-primary[style*="padding:0.6rem"],
+      .btn-ghost[style*="padding:0.6rem"],
+      .btn-orange[style*="padding:0.6rem"] {
+        width: auto;
+      }
+
+      /* Lab canvas height */
+      #labCanvas { height: 180px !important; }
+
+      /* Hide min-width on author card */
+      [style*="min-width: 220px"] { min-width: 0 !important; }
+
+      /* MRUV charts 3-col → 1-col */
+      #lesson-mruv .chart-container.chart-small {
+        max-width: 100% !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      /* 2-col stats → 1-col on very small */
+      [style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .section-title { font-size: 1.5rem !important; }
+      main { padding: 0.75rem 0.75rem 5rem; }
+    }
+
+    /* ─── ROBOT ACCESS OVERLAY ANIMATIONS ─── */
+    @keyframes raoSpin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes raoBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    @keyframes raoBar {
+      from { width: 100%; }
+      to   { width: 0%; }
+    }
+    @keyframes raoGlitch {
+      0%, 90%, 100% { transform: translate(0,0) skew(0deg); filter: drop-shadow(0 0 30px rgba(255,71,87,0.6)); }
+      91% { transform: translate(-4px, 1px) skew(-2deg); filter: drop-shadow(-4px 0 8px rgba(255,71,87,0.9)) drop-shadow(4px 0 8px rgba(0,212,255,0.5)); }
+      93% { transform: translate(3px, -1px) skew(1deg); filter: drop-shadow(4px 0 8px rgba(255,71,87,0.9)); }
+      95% { transform: translate(0,0); }
+    }
+    @keyframes raoGlitch2 {
+      0%, 90%, 100% { transform: translate(0,0); opacity:0; }
+      91% { transform: translate(5px, -3px); opacity:0.5; }
+      93% { transform: translate(-3px, 2px); opacity:0.3; }
+      95% { transform: translate(0,0); opacity:0; }
+    }
+    /* ─── ROBOT D-PAD ─── */
+    .robot-dpad {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex; align-items: center; justify-content: center;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    .robot-dpad:active, .robot-dpad.pressed {
+      background: rgba(59,158,255,0.15);
+      border-color: var(--blue);
+      transform: scale(0.93);
+    }
+    @keyframes robotBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    @keyframes robotScan {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+  
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+    /* ─── SCORE BIG ─── */
+    .score-display {
+      font-family: var(--head);
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--cyan);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    /* ─── MRU CAR ─── */
+    #mruCar, #mruvCar {
+      position: absolute;
+      transition: left 0.15s linear;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="starCanvas"></canvas>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">MECH<span>LAB</span></div>
+        <div class="logo-sub">Laboratorul de Mecanică</div>
+      </div>
+    </div>
+
+    <nav class="desktop-nav">
+      <button class="nav-btn active" data-panel="home">Home</button>
+      <button class="nav-btn" data-panel="lessons">Lecții</button>
+      <button class="nav-btn" data-panel="lab">Laborator</button>
+      <button class="nav-btn" data-panel="quiz">Quiz</button>
+      <button class="nav-btn" data-panel="problems">Probleme</button>
+      <button class="nav-btn" data-panel="game">Joc</button>
+      <button class="nav-btn" data-panel="robot">🤖 Robot</button>
+    </nav>
+
+    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Meniu">☰</button>
+  </div>
+</header>
+
+<!-- MOBILE DRAWER -->
+<div id="mobileDrawerBackdrop" class="mobile-drawer-backdrop"></div>
+<aside id="mobileDrawer" class="mobile-drawer">
+  <div class="drawer-header">
+    <div class="logo">
+      <div class="logo-icon" style="width:32px;height:32px;font-size:1rem;">⚡</div>
+      <div class="logo-text">MECH<span>LAB</span></div>
+    </div>
+    <button id="mobileDrawerClose" class="drawer-close">✕</button>
+  </div>
+  <nav class="mobile-drawer-nav">
+    <button class="mobile-nav-btn active" data-panel="home"><span class="nav-icon">🏠</span>Home</button>
+    <button class="mobile-nav-btn" data-panel="lessons"><span class="nav-icon">📚</span>Lecții</button>
+    <button class="mobile-nav-btn" data-panel="lab"><span class="nav-icon">🔬</span>Laborator</button>
+    <button class="mobile-nav-btn" data-panel="quiz"><span class="nav-icon">🧠</span>Quiz</button>
+    <button class="mobile-nav-btn" data-panel="problems"><span class="nav-icon">📐</span>Probleme</button>
+    <button class="mobile-nav-btn" data-panel="game"><span class="nav-icon">🎮</span>Joc</button>
+    <button class="mobile-nav-btn" data-panel="robot"><span class="nav-icon">🤖</span>Robot</button>
+  </nav>
+</aside>
+
+<main>
+
+  <!-- ═══════════════════ HOME ═══════════════════ -->
+  <section id="home" class="panel active" style="display:block">
+
+    <!-- Hero -->
+    <div class="card card-glow" style="padding: 3rem 2.5rem; position:relative; overflow:hidden; margin-bottom:1.5rem;">
+      <div class="hero-glow"></div>
+      <div style="display:grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: start;" class="hero-grid">
+        <div>
+          <div class="section-badge">🏆 Olimpiada de Creativitate Științifică</div>
+          <h1 class="section-title" style="font-size: clamp(2.2rem, 6vw, 4rem); margin-bottom: 1rem;">
+            Laboratorul de<br><span class="accent">Mecanică</span>
+          </h1>
+          <p class="section-sub" style="max-width: 520px;">
+            Proiect educațional interactiv pentru studiul <strong style="color:var(--text)">cinematicii</strong> și <strong style="color:var(--text)">dinamicii</strong>. Lecții, simulări, quiz și joc avansat — totul într-un singur loc.
+          </p>
+          <div style="display:flex; flex-wrap:wrap; gap: 0.75rem; margin-top: 2rem;">
+            <button class="btn-primary go-panel" data-target="lessons">→ Lecții</button>
+            <button class="btn-ghost go-panel" data-target="lab">🔬 Laborator</button>
+          </div>
+        </div>
+        <div class="card hero-author" style="padding: 1.5rem; min-width: 220px; flex-shrink:0;">
+          <div style="font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.12em; color: var(--muted); font-family:var(--mono); margin-bottom: 0.35rem;">Autori</div>
+          <div style="font-family:var(--head); font-weight:700; font-size: 1rem; color: var(--text); margin-bottom: 1rem;">Pelelungă Răzvan<br>Gurău Ionuț</div>
+          <div style="font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.12em; color: var(--muted); font-family:var(--mono); margin-bottom: 0.35rem;">Unitatea</div>
+          <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.4;">Liceul Teoretic<br>„Panait Cerna" Brăila</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature grid -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+      <div class="feature-card" style="cursor:pointer;" onclick="openPanel('lessons')">
+        <div class="feature-icon" style="background: rgba(59,158,255,0.12);">📚</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem;">Lecții</div>
+          <div style="color:var(--muted); font-size:0.875rem;">MRU și MRUV cu simulări interactive și grafice în timp real.</div>
+        </div>
+      </div>
+      <div class="feature-card" style="cursor:pointer;" onclick="openPanel('lab')">
+        <div class="feature-icon" style="background: rgba(0,212,255,0.1);">🔬</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem;">Laborator virtual</div>
+          <div style="color:var(--muted); font-size:0.875rem;">Simulare F = m·a cu forță reglabilă, masă și frecare.</div>
+        </div>
+      </div>
+      <div class="feature-card" style="cursor:pointer;" onclick="openPanel('quiz')">
+        <div class="feature-icon" style="background: rgba(46,204,139,0.1);">🧠</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem;">Quiz interactiv</div>
+          <div style="color:var(--muted); font-size:0.875rem;">10 întrebări cu feedback imediat și scor în timp real.</div>
+        </div>
+      </div>
+      <div class="feature-card" style="cursor:pointer;" onclick="openPanel('problems')">
+        <div class="feature-icon" style="background: rgba(255,123,46,0.1);">📐</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem;">Probleme</div>
+          <div style="color:var(--muted); font-size:0.875rem;">10 exerciții rezolvate, cu soluțiile ascunse la click.</div>
+        </div>
+      </div>
+      <div class="feature-card" style="cursor:pointer;" onclick="openPanel('game')">
+        <div class="feature-icon" style="background: rgba(124,58,237,0.12);">🚀</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem;">Joc avansat</div>
+          <div style="color:var(--muted); font-size:0.875rem;">Lansator de proiectile — aplică MRUV pentru a lovi ținta!</div>
+        </div>
+      </div>
+      <div class="feature-card" style="cursor:pointer;" onclick="openPanel('robot')">
+        <div class="feature-icon" style="background: rgba(0,212,100,0.12);">🤖</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem;">Robot Line Follower</div>
+          <div style="color:var(--muted); font-size:0.875rem;">Dashboard live pentru robotul ESP32 — stream video, control și telemetrie.</div>
+        </div>
+      </div>
+      <div class="card card-orange" style="padding: 1rem 1.25rem; display:flex; gap:1rem; align-items:flex-start;">
+        <div class="feature-icon" style="background: rgba(255,123,46,0.15); color:var(--orange);">✨</div>
+        <div>
+          <div style="font-weight:700; margin-bottom:0.25rem; color:var(--orange);">Provocarea zilei</div>
+          <div style="color:var(--muted); font-size:0.875rem;">Compară MRU cu MRUV — observă cum accelerația schimbă forma graficelor.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clock -->
+    <div class="card card-glow" style="padding:1.75rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:2rem; flex-wrap:wrap;">
+      <!-- Analog clock -->
+      <div style="display:flex; align-items:center; gap:1.5rem; flex-shrink:0;">
+        <canvas id="analogClock" width="90" height="90" style="flex-shrink:0;"></canvas>
+        <div>
+          <div id="clockTime" style="font-family:var(--mono); font-size:clamp(2rem,6vw,3rem); font-weight:500; color:var(--cyan); letter-spacing:0.04em; line-height:1;">00:00:00</div>
+          <div id="clockSeconds" style="font-family:var(--mono); font-size:0.7rem; color:var(--muted); margin-top:0.2rem; letter-spacing:0.08em;">· · ·</div>
+        </div>
+      </div>
+      <!-- Divider -->
+      <div style="width:1px; height:64px; background:var(--border); flex-shrink:0;" class="clock-divider"></div>
+      <!-- Date info -->
+      <div style="flex:1; min-width:180px;">
+        <div id="clockDay" style="font-family:var(--head); font-weight:800; font-size:clamp(1.1rem,3vw,1.6rem); color:var(--text); margin-bottom:0.25rem;">Luni</div>
+        <div id="clockDate" style="font-family:var(--mono); font-size:0.9rem; color:var(--cyan);">01 Ianuarie 2025</div>
+        <div id="clockDayOfYear" style="font-family:var(--mono); font-size:0.65rem; color:var(--muted); margin-top:0.3rem; letter-spacing:0.06em;">ZI 001 DIN 365</div>
+      </div>
+      <!-- Right side badges -->
+      <div style="display:flex; flex-direction:column; gap:0.5rem; min-width:130px;">
+        <div style="padding:0.4rem 0.85rem; border-radius:999px; background:rgba(59,158,255,0.08); border:1px solid rgba(59,158,255,0.18); font-family:var(--mono); font-size:0.68rem; color:var(--blue); text-align:center;">
+          📅 <span id="clockWeek">Săpt. 01</span>
+        </div>
+        <div style="padding:0.4rem 0.85rem; border-radius:999px; background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.15); font-family:var(--mono); font-size:0.68rem; color:var(--cyan); text-align:center;">
+          🌍 <span id="clockTZ">Europa/București</span>
+        </div>
+        <div style="padding:0.4rem 0.85rem; border-radius:999px; background:rgba(46,204,139,0.07); border:1px solid rgba(46,204,139,0.18); font-family:var(--mono); font-size:0.68rem; color:#2ecc8b; text-align:center;" id="clockAmPm">
+          🌙 NOAPTE
+        </div>
+      </div>
+    </div>
+
+  </section>
+  <section id="lessons" class="panel">
+    <div class="card card-glow" style="padding: 2rem 2.5rem; margin-bottom: 1.5rem;">
+      <div class="section-badge">📚 Teorie</div>
+      <h2 class="section-title"><span class="accent">Lecții</span></h2>
+      <p class="section-sub">MRU și MRUV — structurate clar, cu simulări și grafice interactive.</p>
+      <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top: 1.5rem;">
+        <button class="lesson-tab active" data-lesson="mru">Mișcarea Rectilinie Uniformă</button>
+        <button class="lesson-tab" data-lesson="mruv">Mișcarea Rectilinie Uniform Variată</button>
+      </div>
+    </div>
+
+    <!-- MRU -->
+    <div id="lesson-mru" class="lesson-panel" style="display:block;">
+      <div style="display:grid; gap: 1.5rem;">
+
+        <div class="card card-glow" style="padding: 2rem;">
+          <h3 style="font-family:var(--head); font-size: 1.75rem; font-weight:800; margin-bottom: 0.5rem;">Mișcarea Rectilinie <span style="color:var(--cyan)">Uniformă</span></h3>
+          <p style="color:var(--muted);">Mișcarea în care viteza este <strong style="color:var(--text)">constantă</strong>, iar accelerația este <strong style="color:var(--text)">zero</strong>.</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 320px; gap: 1.5rem;">
+          <!-- Simulator -->
+          <div>
+            <div class="card grid-bg" style="padding: 1.5rem; min-height: 340px; position:relative; overflow:hidden; margin-bottom: 1rem;">
+              <div style="display:flex; justify-content:space-between; align-items: flex-start; flex-wrap:wrap; gap:1rem; margin-bottom: 2rem;">
+                <div>
+                  <div style="font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-family:var(--mono);">Ecuație</div>
+                  <div class="formula-lg" style="margin-top:0.35rem;">x = x₀ + v · t</div>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                  <button id="mruPlay" class="btn-primary" style="padding:0.6rem 1.1rem;">▶ Start</button>
+                  <button id="mruReset" class="btn-ghost" style="padding:0.6rem 1.1rem;">↺</button>
+                </div>
+              </div>
+
+              <!-- Track -->
+              <div style="position:relative; margin: 1rem 0 2rem;">
+                <div style="height: 2px; background: rgba(255,255,255,0.1); border-radius:1px; position:relative;">
+                  <!-- markers -->
+                  <div style="position:absolute; top: 10px; left:0; width:100%; display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); font-family:var(--mono);">
+                    <span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50 m</span>
+                  </div>
+                  <div id="mruCar" style="position:absolute; top:-52px; left:0; transform:translateX(-50%);">
+                    <div style="background:var(--blue); color:white; font-family:var(--mono); font-size:0.65rem; padding:2px 8px; border-radius:4px; margin-bottom:6px; white-space:nowrap;" id="mruBadge">v = 5.0 m/s</div>
+                    <div style="width:52px; height:26px; border-radius:8px; background:linear-gradient(135deg, var(--blue2), var(--cyan)); position:relative; box-shadow: 0 0 15px rgba(59,158,255,0.4);">
+                      <div style="position:absolute; bottom:-5px; left:6px; width:10px; height:10px; border-radius:50%; background: var(--bg3); border: 2px solid var(--muted);"></div>
+                      <div style="position:absolute; bottom:-5px; right:6px; width:10px; height:10px; border-radius:50%; background: var(--bg3); border: 2px solid var(--muted);"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stats -->
+              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 3rem;">
+                <div class="stat-chip"><div class="label">Poziție inițială</div><div class="value" style="color:var(--muted);">0 m</div></div>
+                <div class="stat-chip"><div class="label">Timp</div><div class="value" id="mruCurrentT">10.0 s</div></div>
+                <div class="stat-chip"><div class="label">Viteză</div><div class="value" id="mruCurrentV">5.0 m/s</div></div>
+                <div class="stat-chip"><div class="label">Poziție finală</div><div class="value" style="color:var(--orange);" id="mruPositionOut">50.0 m</div></div>
+              </div>
+            </div>
+            <div class="card" style="padding: 1.25rem;">
+              <h4 style="font-family:var(--head); font-weight:700; color:var(--text); margin-bottom: 0.75rem; font-size: 1rem;">Teoria MRU</h4>
+              <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+                  <span style="color:var(--cyan);">→</span>
+                  Corpul parcurge <strong style="color:var(--text);">distanțe egale</strong> în intervale de timp egale.
+                </div>
+                <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+                  <span style="color:var(--cyan);">→</span>
+                  Viteza este constantă, accelerația este <strong style="color:var(--text);">zero</strong>.
+                </div>
+                <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+                  <span style="color:var(--cyan);">→</span>
+                  Graficul x(t) este o <strong style="color:var(--text);">dreaptă</strong>.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls + Chart -->
+          <div style="display:flex; flex-direction:column; gap: 1rem;">
+            <div class="card" style="padding: 1.5rem;">
+              <div style="font-family:var(--mono); font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom: 1.25rem;">Parametri MRU</div>
+              <div style="margin-bottom: 1.25rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                  <label style="font-size:0.8rem; font-weight:700; color:var(--muted);">Viteză</label>
+                  <span id="mruVLabel" class="formula" style="font-size:0.85rem; padding: 0.2rem 0.65rem;">5.0 m/s</span>
+                </div>
+                <input id="mruVelocity" type="range" min="1" max="10" step="0.5" value="5">
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                  <label style="font-size:0.8rem; font-weight:700; color:var(--muted);">Timp</label>
+                  <span id="mruTLabel" class="formula" style="font-size:0.85rem; padding: 0.2rem 0.65rem;">10.0 s</span>
+                </div>
+                <input id="mruTime" type="range" min="1" max="10" step="0.5" value="10">
+              </div>
+            </div>
+            <div class="card" style="padding: 1.25rem;">
+              <div style="font-family:var(--mono); font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom: 0.75rem;">Grafic x(t)</div>
+              <div class="chart-container"><canvas id="mruChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MRUV -->
+    <div id="lesson-mruv" class="lesson-panel" style="display:none;">
+      <div style="display:grid; gap: 1.5rem;">
+
+        <div class="card card-glow" style="padding: 2rem;">
+          <h3 style="font-family:var(--head); font-size: 1.75rem; font-weight:800; margin-bottom: 0.5rem;">MRUV — Mișcarea Rectilinie Uniform <span style="color:var(--orange)">Variată</span></h3>
+          <p style="color:var(--muted);">Mișcarea în care <strong style="color:var(--text);">accelerația este constantă</strong>, iar viteza se schimbă uniform în timp.</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+          <div class="card" style="padding: 1.25rem;">
+            <div class="section-badge" style="margin-bottom: 0.75rem;">Accelerația</div>
+            <p style="color:var(--muted); font-size:0.875rem; margin-bottom: 0.75rem;">Variația vitezei în unitatea de timp.</p>
+            <div class="formula">a = Δv / Δt</div>
+          </div>
+          <div class="card" style="padding: 1.25rem;">
+            <div class="section-badge" style="margin-bottom: 0.75rem; background:rgba(255,123,46,0.1); border-color:rgba(255,123,46,0.25); color:var(--orange);">Legea vitezei</div>
+            <p style="color:var(--muted); font-size:0.875rem; margin-bottom: 0.75rem;">Viteza crește sau scade liniar.</p>
+            <div class="formula" style="color:var(--orange); background:rgba(255,123,46,0.06); border-color:rgba(255,123,46,0.2);">v = v₀ + a·t</div>
+          </div>
+          <div class="card" style="padding: 1.25rem;">
+            <div class="section-badge" style="margin-bottom: 0.75rem; background:rgba(46,204,139,0.1); border-color:rgba(46,204,139,0.25); color:var(--green);">Legea mișcării</div>
+            <p style="color:var(--muted); font-size:0.875rem; margin-bottom: 0.75rem;">Poziția variază parabolic.</p>
+            <div class="formula" style="color:var(--green); background:rgba(46,204,139,0.06); border-color:rgba(46,204,139,0.2); font-size:0.9rem;">x = x₀ + v₀t + ½at²</div>
+          </div>
+        </div>
+
+        <!-- MRUV charts -->
+        <div class="card" style="padding: 1.5rem;">
+          <h4 style="font-family:var(--head); font-weight:700; margin-bottom: 1.25rem;">Grafice MRUV</h4>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+            <div>
+              <div class="chart-container chart-small"><canvas id="mruvAT"></canvas></div>
+              <p style="font-size:0.8rem; color:var(--muted); margin-top:0.5rem; text-align:center;"><strong style="color:var(--orange);">a(t)</strong>: linie orizontală</p>
+            </div>
+            <div>
+              <div class="chart-container chart-small"><canvas id="mruvVT"></canvas></div>
+              <p style="font-size:0.8rem; color:var(--muted); margin-top:0.5rem; text-align:center;"><strong style="color:var(--cyan);">v(t)</strong>: dreaptă oblică</p>
+            </div>
+            <div>
+              <div class="chart-container chart-small"><canvas id="mruvXT"></canvas></div>
+              <p style="font-size:0.8rem; color:var(--muted); margin-top:0.5rem; text-align:center;"><strong style="color:var(--green);">x(t)</strong>: parabolă</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MRUV simulator -->
+        <div style="display:grid; grid-template-columns: 1fr 300px; gap: 1.5rem;">
+          <div class="card grid-bg" style="padding: 1.5rem; min-height: 300px; position:relative; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom: 2rem;">
+              <div>
+                <div style="font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-family:var(--mono);">Legea vitezei</div>
+                <div class="formula-lg" style="color:var(--orange); background:rgba(255,123,46,0.06); border-color:rgba(255,123,46,0.2); margin-top:0.35rem;">v = v₀ + a · t</div>
+              </div>
+              <div style="display:flex; gap:0.5rem;">
+                <button id="mruvPlay" class="btn-orange" style="padding:0.6rem 1.1rem;">▶ Start</button>
+                <button id="mruvPause" class="btn-ghost" style="padding:0.6rem 1.1rem;">⏸</button>
+                <button id="mruvReset" class="btn-ghost" style="padding:0.6rem 1.1rem;">↺</button>
+              </div>
+            </div>
+            <!-- Track -->
+            <div style="position:relative; margin: 1rem 0 2rem;">
+              <div style="height: 2px; background: rgba(255,255,255,0.1); position:relative;">
+                <div id="mruvCar" style="position:absolute; top:-52px; left:5%; transform:translateX(-50%);">
+                  <div style="background:var(--orange); color:white; font-family:var(--mono); font-size:0.65rem; padding:2px 8px; border-radius:4px; margin-bottom:6px; white-space:nowrap;" id="mruvBadge">v = 4.0 m/s</div>
+                  <div style="width:52px; height:26px; border-radius:8px; background:linear-gradient(135deg, #ff7b2e, #ff4400); position:relative; box-shadow: 0 0 15px rgba(255,123,46,0.4);">
+                    <div style="position:absolute; bottom:-5px; left:6px; width:10px; height:10px; border-radius:50%; background: var(--bg3); border: 2px solid var(--muted);"></div>
+                    <div style="position:absolute; bottom:-5px; right:6px; width:10px; height:10px; border-radius:50%; background: var(--bg3); border: 2px solid var(--muted);"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Stats -->
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 3rem;">
+              <div class="stat-chip"><div class="label">Timp</div><div class="value" id="mruvTimeOut">0.0 s</div></div>
+              <div class="stat-chip"><div class="label">Viteză</div><div class="value" style="color:var(--orange);" id="mruvVOut">4.0 m/s</div></div>
+              <div class="stat-chip"><div class="label">Accelerație</div><div class="value" style="color:var(--orange);" id="mruvAOut">2.0 m/s²</div></div>
+              <div class="stat-chip"><div class="label">Poziție</div><div class="value" style="color:var(--green);" id="mruvXOut">0.0 m</div></div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:1rem;">
+            <div class="card" style="padding: 1.5rem;">
+              <div style="font-family:var(--mono); font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom: 1.25rem;">Parametri MRUV</div>
+              <div style="margin-bottom: 1rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+                  <label style="font-size:0.8rem; color:var(--muted); font-weight:700;">Viteza inițială v₀</label>
+                  <span id="mruvV0Label" class="formula" style="font-size:0.8rem; padding:0.15rem 0.5rem;">4.0 m/s</span>
+                </div>
+                <input id="mruvV0" type="range" min="0" max="15" step="0.5" value="4">
+              </div>
+              <div style="margin-bottom: 1rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+                  <label style="font-size:0.8rem; color:var(--muted); font-weight:700;">Accelerație a</label>
+                  <span id="mruvALabel" class="formula" style="font-size:0.8rem; padding:0.15rem 0.5rem; color:var(--orange); background:rgba(255,123,46,0.06); border-color:rgba(255,123,46,0.2);">2.0 m/s²</span>
+                </div>
+                <input id="mruvA" type="range" min="-5" max="5" step="0.5" value="2" class="orange-range">
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+                  <label style="font-size:0.8rem; color:var(--muted); font-weight:700;">Poziție inițială x₀</label>
+                  <span id="mruvX0Label" class="formula" style="font-size:0.8rem; padding:0.15rem 0.5rem; color:var(--green); background:rgba(46,204,139,0.06); border-color:rgba(46,204,139,0.2);">0.0 m</span>
+                </div>
+                <input id="mruvX0" type="range" min="0" max="20" step="1" value="0">
+              </div>
+            </div>
+            <div class="card" style="padding: 1.25rem;">
+              <h4 style="font-family:var(--mono); font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.75rem;">Clasificare</h4>
+              <div style="display:flex; flex-direction:column; gap:0.5rem; font-size:0.875rem;">
+                <div><span style="color:var(--green);">→</span> <strong>Accelerată</strong>: a și v cu același sens.</div>
+                <div><span style="color:var(--red);">→</span> <strong>Frânată</strong>: a și v cu sensuri opuse.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ LABORATOR ═══════════════════ -->
+  <section id="lab" class="panel">
+    <div class="card card-glow" style="padding: 2rem 2.5rem; margin-bottom: 1.5rem;">
+      <div class="section-badge">🔬 Experiment</div>
+      <h2 class="section-title">Legea a II-a a lui <span class="accent">Newton</span></h2>
+      <p class="section-sub">Experimentează cum funcționează <strong style="color:var(--text)">F = m · a</strong>. Modifică forța, masa și frecarea — urmărește totul în timp real.</p>
+    </div>
+
+    <!-- Canvas simulator -->
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1rem; flex-wrap:wrap; gap:0.5rem;">
+        <h3 style="font-family:var(--head); font-weight:700;">Scenă experimentală</h3>
+        <span id="labStatus" class="lab-status idle">În așteptare</span>
+      </div>
+      <canvas id="labCanvas" width="900" height="240" style="width:100%; border-radius: 10px; background: var(--bg2); display:block; border: 1px solid var(--border);"></canvas>
+      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-top: 1rem;">
+        <div class="stat-chip"><div class="label">Timp</div><div class="value" id="labTime">0.00 s</div></div>
+        <div class="stat-chip"><div class="label">Accelerație</div><div class="value" style="color:var(--orange);" id="labAccel">0.00 m/s²</div></div>
+        <div class="stat-chip"><div class="label">Viteză</div><div class="value" style="color:var(--green);" id="labViteza">0.00 m/s</div></div>
+        <div class="stat-chip"><div class="label">Distanță</div><div class="value" id="labDist">0.00 m</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 340px 1fr; gap: 1.5rem;">
+      <!-- Controls -->
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <div class="card" style="padding: 1.5rem;">
+          <div style="font-family:var(--mono); font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom: 1.25rem;">Parametri experiment</div>
+          <div style="margin-bottom: 1.25rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+              <label style="font-size:0.85rem; font-weight:700;">Forță netă (F)</label>
+              <span id="labForceLabel" class="formula" style="font-size:0.85rem; padding:0.2rem 0.6rem; color:var(--orange); background:rgba(255,123,46,0.06); border-color:rgba(255,123,46,0.2);">20 N</span>
+            </div>
+            <input id="labForceRange" type="range" min="0" max="100" step="1" value="20" class="orange-range">
+            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); font-family:var(--mono); margin-top:0.25rem;"><span>0 N</span><span>100 N</span></div>
+          </div>
+          <div style="margin-bottom: 1.25rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+              <label style="font-size:0.85rem; font-weight:700;">Masă (m)</label>
+              <span id="labMassLabel" class="formula" style="font-size:0.85rem; padding:0.2rem 0.6rem;">5 kg</span>
+            </div>
+            <input id="labMassRange" type="range" min="1" max="50" step="1" value="5">
+            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); font-family:var(--mono); margin-top:0.25rem;"><span>1 kg</span><span>50 kg</span></div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1.5rem;">
+            <label style="font-size:0.85rem; font-weight:700;">Frecare (μ)</label>
+            <div style="display:flex; gap:0.5rem;">
+              <button id="frictionOff" class="btn-primary" style="padding:0.35rem 0.85rem; font-size:0.8rem; box-shadow:none;">μ = 0</button>
+              <button id="frictionOn" class="btn-ghost" style="padding:0.35rem 0.85rem; font-size:0.8rem;">μ = 0.3</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button id="labStart" class="btn-orange" style="flex:1;">▶ Start</button>
+            <button id="labPause" class="btn-ghost" style="padding:0.75rem 1rem;">⏸</button>
+            <button id="labReset" class="btn-ghost" style="padding:0.75rem 1rem;">↺</button>
+          </div>
+        </div>
+
+        <div class="card card-glow" style="padding: 1.5rem;">
+          <div style="font-family:var(--mono); font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom: 1rem;">Calculul în timp real</div>
+          <div class="info-row"><span class="ik">Forță (F)</span><span class="iv" id="labCalcF">20 N</span></div>
+          <div class="info-row"><span class="ik">Masă (m)</span><span class="iv" id="labCalcM">5 kg</span></div>
+          <div class="info-row"><span class="ik">Frecare (f)</span><span class="iv" id="labCalcFr">0 N</span></div>
+          <div class="info-row"><span class="ik">F netă</span><span class="iv" id="labCalcFnet">20 N</span></div>
+          <div style="padding-top: 0.75rem; border-top: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center; margin-top:0.25rem;">
+            <span style="color:var(--muted); font-size:0.875rem;">a = F_netă / m</span>
+            <span style="font-family:var(--head); font-size: 1.6rem; font-weight:800; color:var(--orange);" id="labCalcA">4.00 m/s²</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div style="display:flex; flex-direction:column; gap: 1rem;">
+        <div class="card" style="padding: 1.25rem;">
+          <div style="display:flex; gap:0.5rem; margin-bottom: 1rem; flex-wrap:wrap;">
+            <button class="chart-tab-btn active" data-chart="vel">v(t) — Viteză</button>
+            <button class="chart-tab-btn" data-chart="pos">x(t) — Poziție</button>
+            <button class="chart-tab-btn" data-chart="fma">F, m → a</button>
+          </div>
+          <div id="chartVel" class="lab-chart-panel" style="height:220px;"><canvas id="labChartVel"></canvas></div>
+          <div id="chartPos" class="lab-chart-panel" style="height:220px; display:none;"><canvas id="labChartPos"></canvas></div>
+          <div id="chartFma" class="lab-chart-panel" style="height:220px; display:none;"><canvas id="labChartFma"></canvas></div>
+        </div>
+        <div class="card" style="padding: 1.25rem;">
+          <h4 style="font-family:var(--head); font-weight:700; margin-bottom: 0.75rem; font-size:1rem;">Observații fizice</h4>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;" id="labObservations">
+            <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+              <span style="color:var(--cyan);">→</span> Setează forța și masa, apoi apasă <strong style="color:var(--text)">Start</strong>.
+            </div>
+            <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+              <span style="color:var(--cyan);">→</span> Graficul <strong style="color:var(--text)">v(t)</strong> este o dreaptă — accelerație constantă (MRUV).
+            </div>
+            <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+              <span style="color:var(--cyan);">→</span> Graficul <strong style="color:var(--text)">x(t)</strong> este o parabolă — distanța crește pătratic.
+            </div>
+            <div style="display:flex; gap:0.75rem; font-size:0.875rem; color:var(--muted);">
+              <span style="color:var(--cyan);">→</span> Dublând <strong style="color:var(--text)">F</strong> → accelerația se dublează. Dublând <strong style="color:var(--text)">m</strong> → accelerația se înjumătățește.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ QUIZ ═══════════════════ -->
+  <section id="quiz" class="panel">
+    <div class="card card-glow" style="padding: 2rem 2.5rem; margin-bottom: 1.5rem;">
+      <div class="section-badge">🧠 Testare</div>
+      <h2 class="section-title">Quiz <span class="accent">interactiv</span></h2>
+      <p class="section-sub">10 întrebări cu feedback imediat pentru fiecare răspuns.</p>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 300px; gap: 1.5rem;">
+      <div id="quizContainer" style="display:flex; flex-direction:column; gap: 1rem;"></div>
+      <div style="display:flex; flex-direction:column; gap: 1rem;">
+        <div class="card card-glow" style="padding: 1.5rem; text-align:center;">
+          <div style="font-family:var(--mono); font-size: 0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom: 0.75rem;">Scor curent</div>
+          <div class="score-display" id="scoreDisplay">0 / 10</div>
+          <div style="margin-top: 0.75rem; font-size:0.8rem; color:var(--muted);">1 punct per răspuns corect</div>
+        </div>
+        <div class="card" style="padding: 1.5rem;">
+          <h3 style="font-family:var(--head); font-weight:700; margin-bottom: 0.75rem;">Rezultat final</h3>
+          <p id="resultText" style="color:var(--muted); font-size:0.875rem; margin-bottom:1.25rem;">Apasă „Finalizează" după ce răspunzi la toate întrebările.</p>
+          <div style="display:flex; flex-direction:column; gap:0.5rem;">
+            <button id="finishBtn" class="btn-primary" style="justify-content:center;">🏁 Finalizează testul</button>
+            <button id="resetQuizBtn" class="btn-ghost" style="justify-content:center;">↺ Resetează testul</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ PROBLEME ═══════════════════ -->
+  <section id="problems" class="panel">
+    <div class="card card-glow" style="padding: 2rem 2.5rem; margin-bottom: 1.5rem;">
+      <div class="section-badge">📐 Exerciții</div>
+      <h2 class="section-title"><span class="accent">Probleme</span></h2>
+      <p class="section-sub">10 exerciții pentru recapitulare, cu soluțiile afișabile la click.</p>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P01</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 1</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un corp se deplasează cu viteza de 6 m/s timp de 8 s. Determină distanța parcursă.</p>
+        <details><summary>Vezi răspunsul</summary><p>x = v·t = 6·8 = <strong>48 m</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P02</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 2</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un mobil se deplasează uniform cu 3,5 m/s timp de 12 s. Ce distanță parcurge?</p>
+        <details><summary>Vezi răspunsul</summary><p>x = 3,5·12 = <strong>42 m</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P03</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 3</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un corp pornește cu v₀ = 2 m/s și a = 3 m/s². Ce viteză are după 4 s?</p>
+        <details><summary>Vezi răspunsul</summary><p>v = v₀ + a·t = 2 + 3·4 = <strong>14 m/s</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P04</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 4</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un mobil pornește cu v₀ = 5 m/s și a = -1 m/s². Ce viteză are după 3 s?</p>
+        <details><summary>Vezi răspunsul</summary><p>v = 5 - 1·3 = <strong>2 m/s</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P05</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 5</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un corp: x₀ = 0, v₀ = 4 m/s, a = 2 m/s². Determină poziția după 5 s.</p>
+        <details><summary>Vezi răspunsul</summary><p>x = 0 + 4·5 + ½·2·25 = <strong>45 m</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P06</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 6</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">O forță de 24 N acționează asupra unui corp de 6 kg. Determină accelerația.</p>
+        <details><summary>Vezi răspunsul</summary><p>a = 24/6 = <strong>4 m/s²</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P07</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 7</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Asupra unui corp de 10 kg acționează o forță de 50 N. Calculează accelerația.</p>
+        <details><summary>Vezi răspunsul</summary><p>a = 50/10 = <strong>5 m/s²</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P08</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 8</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Care este forța necesară pentru a produce o = 2 m/s² unui corp de 7 kg?</p>
+        <details><summary>Vezi răspunsul</summary><p>F = 7·2 = <strong>14 N</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P09</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 9</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un mobil pornește din repaus cu a = 1,5 m/s². Ce viteză are după 6 s?</p>
+        <details><summary>Vezi răspunsul</summary><p>v = 1,5·6 = <strong>9 m/s</strong>.</p></details>
+      </div>
+      <div class="card" style="padding: 1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan); margin-bottom:0.25rem;">P10</div>
+        <h3 style="font-family:var(--head); font-weight:700; font-size:1rem; margin-bottom:0.75rem;">Problema 10</h3>
+        <p style="color:var(--muted); font-size:0.875rem; margin-bottom:0.75rem;">Un corp se deplasează uniform cu 9 m/s. Ce distanță parcurge în 15 s?</p>
+        <details><summary>Vezi răspunsul</summary><p>x = 9·15 = <strong>135 m</strong>.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ JOC ═══════════════════ -->
+  <section id="game" class="panel">
+    <div class="card card-glow" style="padding: 2rem 2.5rem; margin-bottom: 1.5rem;">
+      <div class="section-badge">🎮 Joc avansat</div>
+      <h2 class="section-title">Lansatorul de <span class="accent">Proiectile</span></h2>
+      <p class="section-sub">Aplică formulele MRUV pentru a lovi ținta. Reglează viteza și unghiul, calculează traiectoria și lansează!</p>
+    </div>
+    <div class="card" style="padding: 0.75rem; overflow:hidden;">
+      <div class="game-frame-wrap">
+<iframe
+            title="Joc mecanică avansat"
+            srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;ro&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;/&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;/&gt;
+  &lt;title&gt;Lansatorul de Proiectile — Laboratorul de Mecanică&lt;/title&gt;
+  &lt;link href=&quot;https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+  &lt;style&gt;
+    :root {
+      --blue: #00478d;
+      --orange: #fb7800;
+      --teal: #006a71;
+      --pale: #d6e3ff;
+      --dark: #050d1a;
+      --panel: #0a1628;
+      --border: rgba(0,71,141,0.35);
+      --glow: 0 0 20px rgba(0,120,255,0.3);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: &#x27;Rajdhani&#x27;, sans-serif;
+      background: var(--dark);
+      color: #e0eaff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Stars background */
+    body::before {
+      content: &#x27;&#x27;;
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 40%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 55%, rgba(255,255,255,0.25) 0%, transparent 100%),
+        radial-gradient(1px 1px at 85% 10%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 75%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,0.2) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(180deg, rgba(0,71,141,0.25) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .logo {
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #5ab4ff;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(90,180,255,0.5);
+    }
+    .logo span { color: var(--orange); }
+
+    .hud {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .hud-pill {
+      background: rgba(0,71,141,0.3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.75rem;
+      color: #5ab4ff;
+    }
+    .hud-pill span { color: #fff; font-weight: 700; font-size: 0.9rem; }
+
+    .main-layout {
+      position: relative;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 0;
+      height: calc(100vh - 60px);
+    }
+    @media(max-width: 900px) {
+      .main-layout { grid-template-columns: 1fr; height: auto; }
+    }
+
+    /* ─── LEFT PANEL ─── */
+    .control-panel {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .section-title {
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      color: var(--orange);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .card-panel {
+      background: rgba(0,71,141,0.12);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .slider-row { margin-bottom: 14px; }
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #a0c4ff;
+      margin-bottom: 6px;
+    }
+    .slider-row label .val {
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      color: #fff;
+      font-size: 0.85rem;
+      background: rgba(0,71,141,0.4);
+      padding: 2px 10px;
+      border-radius: 6px;
+    }
+    input[type=range] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(0,71,141,0.4);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--orange);
+      border: 2px solid #fff;
+      box-shadow: 0 0 8px rgba(251,120,0,0.6);
+      cursor: pointer;
+    }
+
+    .formula-box {
+      background: rgba(0,106,113,0.15);
+      border: 1px solid rgba(0,106,113,0.4);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.72rem;
+      line-height: 1.8;
+      color: #7dd3d8;
+    }
+    .formula-box .highlight { color: #fb7800; font-weight: 700; }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-fire {
+      background: linear-gradient(135deg, #fb7800, #ff4500);
+      color: white;
+      box-shadow: 0 4px 20px rgba(251,120,0,0.4);
+    }
+    .btn-fire:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(251,120,0,0.6); }
+    .btn-fire:active { transform: translateY(0); }
+    .btn-fire:disabled { background: #444; box-shadow: none; cursor: not-allowed; transform: none; }
+    .btn-secondary {
+      background: rgba(0,71,141,0.3);
+      color: #5ab4ff;
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: rgba(0,71,141,0.5); }
+
+    .prediction-box {
+      background: rgba(251,120,0,0.08);
+      border: 1px solid rgba(251,120,0,0.3);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .pred-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .pred-row:last-child { border-bottom: none; }
+    .pred-label { color: #a0c4ff; }
+    .pred-val { font-family: &#x27;Orbitron&#x27;, monospace; color: #fff; font-size: 0.75rem; }
+
+    .level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(0,71,141,0.4), rgba(0,106,113,0.4));
+      border: 1px solid rgba(90,180,255,0.3);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.7rem;
+      color: #5ab4ff;
+    }
+    .level-badge .lnum { font-size: 1.4rem; font-weight: 900; color: #fff; line-height: 1; }
+
+    /* ─── CANVAS AREA ─── */
+    .canvas-area {
+      position: relative;
+      background: linear-gradient(180deg, #020b18 0%, #041220 60%, #071a10 100%);
+      overflow: hidden;
+    }
+    canvas#gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ─── OVERLAYS ─── */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      background: rgba(5,13,26,0.88);
+      backdrop-filter: blur(4px);
+      z-index: 20;
+    }
+    .overlay h2 {
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-align: center;
+    }
+    .overlay p {
+      color: #a0c4ff;
+      text-align: center;
+      font-size: 1rem;
+      max-width: 380px;
+      line-height: 1.5;
+    }
+    .overlay-btn {
+      padding: 14px 36px;
+      background: linear-gradient(135deg, #00478d, #006a71);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      box-shadow: 0 4px 24px rgba(0,71,141,0.5);
+      transition: all 0.2s;
+    }
+    .overlay-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,71,141,0.7); }
+
+    .hit-flash {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(251,120,0,0.3), transparent 70%);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 15;
+      transition: opacity 0.1s;
+    }
+
+    .toast {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-60px);
+      background: rgba(0,200,100,0.15);
+      border: 1px solid rgba(0,200,100,0.5);
+      color: #7ff5b0;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      padding: 10px 24px;
+      border-radius: 30px;
+      transition: transform 0.35s cubic-bezier(.175,.885,.32,1.275);
+      z-index: 25;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.error { background: rgba(220,50,50,0.15); border-color: rgba(220,50,50,0.5); color: #ff8888; }
+
+    .trajectory-info {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(10,22,40,0.85);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-family: &#x27;Orbitron&#x27;, monospace;
+      font-size: 0.65rem;
+      color: #5ab4ff;
+      line-height: 2;
+    }
+  &lt;/style&gt;
+
+&lt;style id=&quot;mobile-override&quot;&gt;
+@media (max-width: 900px) {
+  html, body { height: 100%; }
+  body { overflow: hidden; }
+
+  header {
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+  .logo {
+    font-size: 0.82rem !important;
+    letter-spacing: 1px !important;
+  }
+  .logo span[style] {
+    display: none !important;
+  }
+  .hud {
+    gap: 4px !important;
+  }
+  .hud-pill {
+    font-size: 0.52rem !important;
+    padding: 3px 6px !important;
+    border-radius: 6px !important;
+  }
+  .hud-pill span {
+    font-size: 0.66rem !important;
+  }
+
+  .main-layout {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 46dvh 1fr !important;
+    height: calc(100dvh - 52px) !important;
+  }
+
+  .canvas-area {
+    min-height: 46dvh !important;
+    height: 46dvh !important;
+  }
+
+  .control-panel {
+    border-right: none !important;
+    border-top: 1px solid var(--border) !important;
+    padding: 8px !important;
+    gap: 8px !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .control-panel::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .card-panel {
+    padding: 10px !important;
+    border-radius: 10px !important;
+  }
+
+  .section-title {
+    font-size: 0.58rem !important;
+    letter-spacing: 2px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .level-badge {
+    padding: 8px 10px !important;
+    font-size: 0.56rem !important;
+    gap: 6px !important;
+    border-radius: 8px !important;
+  }
+  .level-badge .lnum {
+    font-size: 1rem !important;
+  }
+
+  .slider-row {
+    margin-bottom: 8px !important;
+  }
+  .slider-row label {
+    font-size: 0.72rem !important;
+    margin-bottom: 4px !important;
+  }
+  .slider-row label .val {
+    font-size: 0.7rem !important;
+    padding: 2px 8px !important;
+  }
+
+  input[type=range] {
+    height: 4px !important;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .formula-box {
+    font-size: 0.56rem !important;
+    line-height: 1.45 !important;
+    padding: 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .prediction-box {
+    padding: 8px !important;
+    border-radius: 8px !important;
+  }
+  .pred-row {
+    font-size: 0.68rem !important;
+    padding: 2px 0 !important;
+  }
+  .pred-val {
+    font-size: 0.62rem !important;
+  }
+
+  .btn {
+    padding: 10px !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 1px !important;
+    border-radius: 8px !important;
+  }
+
+  .overlay {
+    padding: 16px !important;
+    gap: 14px !important;
+  }
+  .overlay h2 {
+    font-size: 1.1rem !important;
+  }
+  .overlay p {
+    font-size: 0.82rem !important;
+    line-height: 1.35 !important;
+  }
+  .overlay-btn {
+    padding: 11px 18px !important;
+    font-size: 0.68rem !important;
+    border-radius: 10px !important;
+  }
+
+  .trajectory-info {
+    right: 8px !important;
+    bottom: 8px !important;
+    padding: 6px 8px !important;
+    font-size: 0.5rem !important;
+    line-height: 1.5 !important;
+    border-radius: 8px !important;
+  }
+}
+&lt;/style&gt;
+
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;header&gt;
+  &lt;div class=&quot;logo&quot;&gt;MECH&lt;span&gt;SHOT&lt;/span&gt; &lt;span style=&quot;color:#5ab4ff;font-size:0.7rem;letter-spacing:1px;&quot;&gt;LABORATORUL DE MECANICĂ&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;hud&quot;&gt;
+    &lt;div class=&quot;hud-pill&quot;&gt;NIVEL &lt;span id=&quot;hudLevel&quot;&gt;1&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;hud-pill&quot;&gt;SCOR &lt;span id=&quot;hudScore&quot;&gt;0&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;hud-pill&quot;&gt;VIEȚI &lt;span id=&quot;hudLives&quot;&gt;❤️❤️❤️&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;hud-pill&quot;&gt;ÎNCERC. &lt;span id=&quot;hudAttempts&quot;&gt;3&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/header&gt;
+
+&lt;div class=&quot;main-layout&quot;&gt;
+
+  &lt;!-- LEFT PANEL --&gt;
+  &lt;div class=&quot;control-panel&quot;&gt;
+
+    &lt;div class=&quot;level-badge&quot;&gt;
+      &lt;div&gt;
+        &lt;div style=&quot;font-size:0.55rem;color:#a0c4ff;letter-spacing:2px;&quot;&gt;NIVEL&lt;/div&gt;
+        &lt;div class=&quot;lnum&quot; id=&quot;levelNum&quot;&gt;1&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;levelDesc&quot; style=&quot;font-size:0.65rem;line-height:1.4;color:#a0c4ff;flex:1;&quot;&gt;Lansează proiectilul și atinge ținta!&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;card-panel&quot;&gt;
+      &lt;div class=&quot;section-title&quot;&gt;⚙ Parametri lansare&lt;/div&gt;
+
+      &lt;div class=&quot;slider-row&quot;&gt;
+        &lt;label&gt;Viteză inițială v₀ &lt;span class=&quot;val&quot; id=&quot;valV0&quot;&gt;20&lt;/span&gt; m/s&lt;/label&gt;
+        &lt;input type=&quot;range&quot; id=&quot;slV0&quot; min=&quot;5&quot; max=&quot;60&quot; value=&quot;20&quot; step=&quot;1&quot;&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;slider-row&quot;&gt;
+        &lt;label&gt;Unghi θ &lt;span class=&quot;val&quot; id=&quot;valAngle&quot;&gt;45&lt;/span&gt;°&lt;/label&gt;
+        &lt;input type=&quot;range&quot; id=&quot;slAngle&quot; min=&quot;5&quot; max=&quot;85&quot; value=&quot;45&quot; step=&quot;1&quot;&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;card-panel&quot;&gt;
+      &lt;div class=&quot;section-title&quot;&gt;📐 Calcule MRUV&lt;/div&gt;
+      &lt;div class=&quot;formula-box&quot;&gt;
+        &lt;div&gt;vₓ = v₀·cos(θ) = &lt;span class=&quot;highlight&quot; id=&quot;calcVx&quot;&gt;14.1&lt;/span&gt; m/s&lt;/div&gt;
+        &lt;div&gt;vᵧ = v₀·sin(θ) = &lt;span class=&quot;highlight&quot; id=&quot;calcVy&quot;&gt;14.1&lt;/span&gt; m/s&lt;/div&gt;
+        &lt;div&gt;T = 2·vᵧ/g = &lt;span class=&quot;highlight&quot; id=&quot;calcT&quot;&gt;2.88&lt;/span&gt; s&lt;/div&gt;
+        &lt;div&gt;x&lt;sub&gt;max&lt;/sub&gt; = vₓ·T = &lt;span class=&quot;highlight&quot; id=&quot;calcXmax&quot;&gt;40.7&lt;/span&gt; m&lt;/div&gt;
+        &lt;div&gt;h&lt;sub&gt;max&lt;/sub&gt; = vᵧ²/2g = &lt;span class=&quot;highlight&quot; id=&quot;calcHmax&quot;&gt;10.2&lt;/span&gt; m&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;card-panel&quot;&gt;
+      &lt;div class=&quot;section-title&quot;&gt;🎯 Predicție traiectorie&lt;/div&gt;
+      &lt;div class=&quot;prediction-box&quot;&gt;
+        &lt;div class=&quot;pred-row&quot;&gt;&lt;span class=&quot;pred-label&quot;&gt;Bătaie orizontală&lt;/span&gt;&lt;span class=&quot;pred-val&quot; id=&quot;predRange&quot;&gt;40.7 m&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;pred-row&quot;&gt;&lt;span class=&quot;pred-label&quot;&gt;Înălțime maximă&lt;/span&gt;&lt;span class=&quot;pred-val&quot; id=&quot;predHeight&quot;&gt;10.2 m&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;pred-row&quot;&gt;&lt;span class=&quot;pred-label&quot;&gt;Timp zbor&lt;/span&gt;&lt;span class=&quot;pred-val&quot; id=&quot;predTime&quot;&gt;2.88 s&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;pred-row&quot;&gt;&lt;span class=&quot;pred-label&quot;&gt;Distanță țintă&lt;/span&gt;&lt;span class=&quot;pred-val&quot; id=&quot;predTarget&quot;&gt;— m&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;button class=&quot;btn btn-fire&quot; id=&quot;btnFire&quot;&gt;🚀 LANSEAZĂ&lt;/button&gt;
+    &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btnReset&quot; style=&quot;margin-top:-8px;&quot;&gt;↺ RESET NIVEL&lt;/button&gt;
+    &lt;button class=&quot;btn btn-secondary&quot; id=&quot;btnShowPath&quot; style=&quot;margin-top:-8px;&quot;&gt;👁 ARATĂ TRAIECTORIA&lt;/button&gt;
+
+  &lt;/div&gt;
+
+  &lt;!-- CANVAS AREA --&gt;
+  &lt;div class=&quot;canvas-area&quot; id=&quot;canvasArea&quot;&gt;
+    &lt;canvas id=&quot;gameCanvas&quot;&gt;&lt;/canvas&gt;
+
+    &lt;!-- Start overlay --&gt;
+    &lt;div class=&quot;overlay&quot; id=&quot;overlayStart&quot;&gt;
+      &lt;h2 style=&quot;color:#5ab4ff;&quot;&gt;🎯 MECHSHOT&lt;/h2&gt;
+      &lt;p&gt;Aplică formulele de &lt;strong&gt;MRUV&lt;/strong&gt; pentru a lansa proiectilul și a lovi ținta!&lt;br&gt;&lt;br&gt;
+      Reglează &lt;strong&gt;viteza&lt;/strong&gt; și &lt;strong&gt;unghiul&lt;/strong&gt;, calculează traiectoria și lansează.&lt;/p&gt;
+      &lt;button class=&quot;overlay-btn&quot; id=&quot;btnStart&quot;&gt;START JOC&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Win overlay --&gt;
+    &lt;div class=&quot;overlay&quot; id=&quot;overlayWin&quot; style=&quot;display:none;&quot;&gt;
+      &lt;h2 style=&quot;color:#7ff5b0;&quot;&gt;🏆 NIVEL COMPLETAT!&lt;/h2&gt;
+      &lt;div style=&quot;text-align:center;&quot;&gt;
+        &lt;div style=&quot;font-family:&#x27;Orbitron&#x27;,monospace;font-size:2.5rem;font-weight:900;color:#fb7800;&quot; id=&quot;winPoints&quot;&gt;+100&lt;/div&gt;
+        &lt;div style=&quot;color:#a0c4ff;font-size:0.9rem;margin-top:4px;&quot; id=&quot;winMsg&quot;&gt;Lovitură perfectă!&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button class=&quot;overlay-btn&quot; id=&quot;btnNext&quot;&gt;NIVEL URMĂTOR →&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Game over overlay --&gt;
+    &lt;div class=&quot;overlay&quot; id=&quot;overlayGameOver&quot; style=&quot;display:none;&quot;&gt;
+      &lt;h2 style=&quot;color:#ff5555;&quot;&gt;💥 GAME OVER&lt;/h2&gt;
+      &lt;p id=&quot;goMsg&quot;&gt;Ai rămas fără vieți. Scor final: &lt;strong id=&quot;goScore&quot;&gt;0&lt;/strong&gt;&lt;/p&gt;
+      &lt;button class=&quot;overlay-btn&quot; id=&quot;btnRestart&quot;&gt;↺ JOACĂ DIN NOU&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Flash effect --&gt;
+    &lt;div class=&quot;hit-flash&quot; id=&quot;hitFlash&quot;&gt;&lt;/div&gt;
+
+    &lt;!-- Toast --&gt;
+    &lt;div class=&quot;toast&quot; id=&quot;toast&quot;&gt;HIT!&lt;/div&gt;
+
+    &lt;!-- Live trajectory info --&gt;
+    &lt;div class=&quot;trajectory-info&quot; id=&quot;trajInfo&quot; style=&quot;display:none;&quot;&gt;
+      &lt;div&gt;t = &lt;span id=&quot;tiT&quot;&gt;0.0&lt;/span&gt; s&lt;/div&gt;
+      &lt;div&gt;x = &lt;span id=&quot;tiX&quot;&gt;0&lt;/span&gt; m&lt;/div&gt;
+      &lt;div&gt;y = &lt;span id=&quot;tiY&quot;&gt;0&lt;/span&gt; m&lt;/div&gt;
+      &lt;div&gt;v = &lt;span id=&quot;tiV&quot;&gt;0&lt;/span&gt; m/s&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+const G = 9.81;
+
+// ── LEVELS ──────────────────────────────────────────────────────────────────
+const LEVELS = [
+  { id:1, desc:&quot;Nivelul de bază — țintă statică.&quot;, targetX:40, targetY:0, targetW:8, wind:0, moving:false },
+  { id:2, desc:&quot;Ajustează unghiul pentru o distanță mai mare.&quot;, targetX:60, targetY:0, targetW:7, wind:0, moving:false },
+  { id:3, desc:&quot;Vânt ușor spre dreapta. Compensează!&quot;, targetX:50, targetY:0, targetW:7, wind:3, moving:false },
+  { id:4, desc:&quot;Țintă ridicată — lovește platforma!&quot;, targetX:55, targetY:12, targetW:8, wind:0, moving:false },
+  { id:5, desc:&quot;Țintă în mișcare! Calculează timing-ul.&quot;, targetX:45, targetY:0, targetW:6, wind:0, moving:true, moveSpeed:4 },
+  { id:6, desc:&quot;Vânt puternic și platformă ridicată.&quot;, targetX:65, targetY:15, targetW:7, wind:6, moving:false },
+  { id:7, desc:&quot;Țintă mică și mobilă. Precizie maximă!&quot;, targetX:50, targetY:0, targetW:5, wind:2, moving:true, moveSpeed:6 },
+  { id:8, desc:&quot;BOSS: Viteză maximă, toate obstacolele!&quot;, targetX:70, targetY:18, targetW:5, wind:5, moving:true, moveSpeed:5 },
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  level: 0,
+  score: 0,
+  lives: 3,
+  attempts: 3,
+  flying: false,
+  showPath: false,
+  proj: null,
+  targetCurrX: 0,
+  targetDir: 1,
+  animFrame: null,
+  lastTime: null,
+};
+
+// ── CANVAS SETUP ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById(&#x27;gameCanvas&#x27;);
+const ctx = canvas.getContext(&#x27;2d&#x27;);
+const area = document.getElementById(&#x27;canvasArea&#x27;);
+
+function resizeCanvas() {
+  canvas.width = area.clientWidth;
+  canvas.height = area.clientHeight;
+  if(!state.flying) render();
+}
+window.addEventListener(&#x27;resize&#x27;, resizeCanvas);
+
+// ── COORDINATE HELPERS ───────────────────────────────────────────────────────
+// Game world: x 0..100 meters, y 0..50 meters
+function W() { return canvas.width; }
+function H() { return canvas.height; }
+const GROUND_FRAC = 0.82; // fraction from top for ground
+
+function wx(mx) { // world x -&gt; canvas x
+  return (mx / 100) * W();
+}
+function wy(my) { // world y -&gt; canvas y (y=0 is ground)
+  const ground = H() * GROUND_FRAC;
+  return ground - (my / 50) * (H() * 0.75);
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  const w = W(), h = H();
+  ctx.clearRect(0,0,w,h);
+
+  const ground = h * GROUND_FRAC;
+
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0,0,0,ground);
+  sky.addColorStop(0,&#x27;#020b18&#x27;);
+  sky.addColorStop(1,&#x27;#051c30&#x27;);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,w,ground);
+
+  // Grid lines
+  ctx.strokeStyle = &#x27;rgba(0,71,141,0.15)&#x27;;
+  ctx.lineWidth = 1;
+  for(let mx=0;mx&lt;=100;mx+=10) {
+    ctx.beginPath(); ctx.moveTo(wx(mx),0); ctx.lineTo(wx(mx),ground); ctx.stroke();
+  }
+  for(let my=0;my&lt;=50;my+=10) {
+    ctx.beginPath(); ctx.moveTo(0,wy(my)); ctx.lineTo(w,wy(my)); ctx.stroke();
+  }
+
+  // Distance labels
+  ctx.fillStyle = &#x27;rgba(90,180,255,0.4)&#x27;;
+  ctx.font = `${Math.max(9,w*0.009)}px Orbitron`;
+  ctx.textAlign = &#x27;center&#x27;;
+  for(let mx=10;mx&lt;=90;mx+=10) {
+    ctx.fillText(mx+&#x27;m&#x27;, wx(mx), ground+14);
+  }
+
+  // Ground
+  const grd = ctx.createLinearGradient(0,ground,0,h);
+  grd.addColorStop(0,&#x27;#0a2808&#x27;);
+  grd.addColorStop(1,&#x27;#050d05&#x27;);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,ground,w,h-ground);
+
+  // Ground line
+  ctx.strokeStyle = &#x27;rgba(0,200,80,0.4)&#x27;;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0,ground); ctx.lineTo(w,ground); ctx.stroke();
+
+  // Wind indicator
+  const lv = LEVELS[state.level];
+  if(lv &amp;&amp; lv.wind !== 0) {
+    const arrows = Math.round(Math.abs(lv.wind)/2)+1;
+    ctx.fillStyle = &#x27;rgba(251,120,0,0.7)&#x27;;
+    ctx.font = `${Math.max(14,w*0.018)}px Arial`;
+    ctx.textAlign = &#x27;left&#x27;;
+    let windStr = (lv.wind &gt; 0 ? &#x27;→&#x27; : &#x27;←&#x27;).repeat(arrows) + &#x27; &#x27; + Math.abs(lv.wind).toFixed(0) + &#x27; m/s&#x27;;
+    ctx.fillText(windStr, wx(2), wy(45));
+    ctx.font = `${Math.max(9,w*0.008)}px Rajdhani`;
+    ctx.fillStyle = &#x27;rgba(251,120,0,0.5)&#x27;;
+    ctx.fillText(&#x27;VÂNT&#x27;, wx(2), wy(47.5));
+  }
+
+  // Predicted trajectory (dashed)
+  if(state.showPath) drawPredictedPath();
+
+  // Target
+  if(lv) drawTarget(lv);
+
+  // Launcher
+  drawLauncher();
+
+  // Projectile
+  if(state.proj) drawProjectile(state.proj);
+
+  // Trail
+  if(state.proj &amp;&amp; state.proj.trail) drawTrail(state.proj.trail);
+}
+
+function drawLauncher() {
+  const v0 = parseFloat(slV0.value);
+  const angle = parseFloat(slAngle.value);
+  const rad = angle * Math.PI / 180;
+
+  const bx = wx(2), by = wy(0);
+  const barLen = W() * 0.06;
+
+  // Base
+  ctx.fillStyle = &#x27;#1a3a6a&#x27;;
+  ctx.strokeStyle = &#x27;rgba(0,120,255,0.5)&#x27;;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(bx-15, by-20, 30, 22, 5);
+  ctx.fill(); ctx.stroke();
+
+  // Barrel
+  ctx.save();
+  ctx.translate(bx, by-10);
+  ctx.rotate(-rad);
+  ctx.fillStyle = &#x27;#2a5a9a&#x27;;
+  ctx.strokeStyle = &#x27;#5ab4ff&#x27;;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(0,-5, barLen, 10, 4);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // Glow
+  ctx.shadowColor = &#x27;#5ab4ff&#x27;;
+  ctx.shadowBlur = 15;
+  ctx.beginPath();
+  ctx.arc(bx, by-10, 6, 0, Math.PI*2);
+  ctx.fillStyle = &#x27;#00478d&#x27;;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawTarget(lv) {
+  const tx = state.targetCurrX;
+  const ty = lv.targetY;
+  const tw = lv.targetW;
+
+  const cx = wx(tx);
+  const cy = wy(ty);
+  const cw = wx(tw) - wx(0);
+  const ch = 14;
+
+  // Platform (if elevated)
+  if(ty &gt; 0) {
+    ctx.fillStyle = &#x27;rgba(0,106,113,0.3)&#x27;;
+    ctx.strokeStyle = &#x27;rgba(0,200,150,0.5)&#x27;;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(cx - cw/2, cy, cw, ch, 3);
+    ctx.fill(); ctx.stroke();
+  }
+
+  // Target circle/bullseye
+  const rings = [
+    {r: cw*0.5, color:&#x27;rgba(220,50,50,0.25)&#x27;},
+    {r: cw*0.35, color:&#x27;rgba(220,50,50,0.45)&#x27;},
+    {r: cw*0.2, color:&#x27;rgba(220,50,50,0.7)&#x27;},
+  ];
+  rings.forEach(({r,color}) =&gt; {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, cw*0.08, 0, Math.PI*2);
+  ctx.fillStyle = &#x27;#ff4444&#x27;;
+  ctx.shadowColor = &#x27;#ff4444&#x27;;
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Distance label
+  ctx.font = `${Math.max(9,W()*0.009)}px Orbitron`;
+  ctx.fillStyle = &#x27;rgba(255,100,100,0.8)&#x27;;
+  ctx.textAlign = &#x27;center&#x27;;
+  ctx.fillText(tx.toFixed(0)+&#x27;m&#x27;, cx, wy(ty)+30);
+}
+
+function drawProjectile(p) {
+  const px = wx(p.x), py = wy(p.y);
+
+  ctx.shadowColor = &#x27;#fb7800&#x27;;
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.arc(px, py, 7, 0, Math.PI*2);
+  const grad = ctx.createRadialGradient(px,py,0,px,py,7);
+  grad.addColorStop(0,&#x27;#fff&#x27;);
+  grad.addColorStop(0.4,&#x27;#ffb347&#x27;);
+  grad.addColorStop(1,&#x27;#fb7800&#x27;);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawTrail(trail) {
+  for(let i=1;i&lt;trail.length;i++) {
+    const alpha = (i/trail.length) * 0.6;
+    const size = (i/trail.length) * 4;
+    ctx.beginPath();
+    ctx.arc(wx(trail[i].x), wy(trail[i].y), size, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(251,120,0,${alpha})`;
+    ctx.fill();
+  }
+}
+
+function drawPredictedPath() {
+  const v0 = parseFloat(slV0.value);
+  const angle = parseFloat(slAngle.value) * Math.PI / 180;
+  const lv = LEVELS[state.level];
+  const wind = lv ? lv.wind : 0;
+
+  const vx = v0 * Math.cos(angle);
+  const vy = v0 * Math.sin(angle);
+
+  ctx.setLineDash([4,6]);
+  ctx.strokeStyle = &#x27;rgba(90,180,255,0.35)&#x27;;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(wx(2), wy(0));
+
+  let px=2, py=0, pvx=vx, pvy=vy;
+  for(let t=0;t&lt;=20;t+=0.05) {
+    px = 2 + vx*t + 0.5*wind*t*t;
+    py = vy*t - 0.5*G*t*t;
+    if(py &lt; 0) break;
+    ctx.lineTo(wx(px), wy(py));
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ── PHYSICS LOOP ─────────────────────────────────────────────────────────────
+function launchProjectile() {
+  if(state.flying) return;
+  const lv = LEVELS[state.level];
+  if(!lv) return;
+
+  const v0 = parseFloat(slV0.value);
+  const angle = parseFloat(slAngle.value) * Math.PI / 180;
+
+  state.proj = {
+    x: 2, y: 0,
+    vx: v0 * Math.cos(angle),
+    vy: v0 * Math.sin(angle),
+    trail: [],
+    t: 0
+  };
+  state.flying = true;
+  state.attempts--;
+  updateHUD();
+
+  document.getElementById(&#x27;trajInfo&#x27;).style.display = &#x27;block&#x27;;
+  btnFire.disabled = true;
+
+  let last = null;
+  function loop(ts) {
+    if(!last) last = ts;
+    const dt = Math.min((ts - last)/1000, 0.05);
+    last = ts;
+
+    const wind = lv.wind || 0;
+    state.proj.vx += wind * dt * 0.1;
+    state.proj.vy -= G * dt;
+    state.proj.x += state.proj.vx * dt;
+    state.proj.y += state.proj.vy * dt;
+    state.proj.t += dt;
+    state.proj.trail.push({x:state.proj.x, y:state.proj.y});
+    if(state.proj.trail.length &gt; 60) state.proj.trail.shift();
+
+    // Moving target
+    if(lv.moving) {
+      state.targetCurrX += state.targetDir * lv.moveSpeed * dt;
+      if(state.targetCurrX &gt; 85) state.targetDir = -1;
+      if(state.targetCurrX &lt; 20) state.targetDir = 1;
+    }
+
+    // Update live info
+    const vMag = Math.sqrt(state.proj.vx**2 + state.proj.vy**2);
+    document.getElementById(&#x27;tiT&#x27;).textContent = state.proj.t.toFixed(2);
+    document.getElementById(&#x27;tiX&#x27;).textContent = state.proj.x.toFixed(1);
+    document.getElementById(&#x27;tiY&#x27;).textContent = state.proj.y.toFixed(1);
+    document.getElementById(&#x27;tiV&#x27;).textContent = vMag.toFixed(1);
+
+    render();
+
+    // Check hit
+    const dx = Math.abs(state.proj.x - state.targetCurrX);
+    const dy = Math.abs(state.proj.y - lv.targetY);
+    const hit = dx &lt; lv.targetW/2 &amp;&amp; dy &lt; 3;
+
+    if(hit) {
+      showHit();
+      return;
+    }
+
+    // Check ground
+    if(state.proj.y &lt; -1 || state.proj.x &gt; 105) {
+      state.flying = false;
+      btnFire.disabled = false;
+      document.getElementById(&#x27;trajInfo&#x27;).style.display = &#x27;none&#x27;;
+      render();
+
+      if(state.attempts &lt;= 0) {
+        state.lives--;
+        updateHUD();
+        if(state.lives &lt;= 0) {
+          showOverlay(&#x27;overlayGameOver&#x27;);
+          document.getElementById(&#x27;goScore&#x27;).textContent = state.score;
+        } else {
+          showToast(&#x27;Ai pierdut o viață! ❤️&#x27;, true);
+          state.attempts = 3;
+          updateHUD();
+        }
+      } else {
+        showToast(&#x27;Ratare! Mai ai &#x27; + state.attempts + &#x27; încerc.&#x27;, true);
+      }
+      return;
+    }
+
+    state.animFrame = requestAnimationFrame(loop);
+  }
+  state.animFrame = requestAnimationFrame(loop);
+}
+
+function showHit() {
+  state.flying = false;
+  cancelAnimationFrame(state.animFrame);
+
+  // Score
+  const bonus = state.attempts * 30 + (LEVELS[state.level].wind !== 0 ? 20 : 0);
+  const pts = 50 + bonus;
+  state.score += pts;
+  updateHUD();
+
+  // Flash
+  const flash = document.getElementById(&#x27;hitFlash&#x27;);
+  flash.style.opacity = 1;
+  setTimeout(()=&gt;{ flash.style.opacity = 0; }, 300);
+
+  // Particles
+  showToast(&#x27;🎯 LOVIT! +&#x27; + pts + &#x27; puncte&#x27;);
+  document.getElementById(&#x27;trajInfo&#x27;).style.display = &#x27;none&#x27;;
+
+  setTimeout(()=&gt;{
+    document.getElementById(&#x27;winPoints&#x27;).textContent = &#x27;+&#x27; + pts;
+    document.getElementById(&#x27;winMsg&#x27;).textContent = &#x27;Rămase: &#x27; + state.attempts + &#x27;/3 încercări bonus: +&#x27; + bonus;
+    showOverlay(&#x27;overlayWin&#x27;);
+  }, 800);
+}
+
+// ── MOVING TARGET IDLE ────────────────────────────────────────────────────────
+let idleFrame = null;
+function startIdleLoop() {
+  cancelAnimationFrame(idleFrame);
+  function loop() {
+    const lv = LEVELS[state.level];
+    if(lv &amp;&amp; lv.moving &amp;&amp; !state.flying) {
+      state.targetCurrX += state.targetDir * lv.moveSpeed * 0.016;
+      if(state.targetCurrX &gt; 85) state.targetDir = -1;
+      if(state.targetCurrX &lt; 20) state.targetDir = 1;
+      render();
+    }
+    idleFrame = requestAnimationFrame(loop);
+  }
+  idleFrame = requestAnimationFrame(loop);
+}
+
+// ── UI HELPERS ────────────────────────────────────────────────────────────────
+function showOverlay(id) {
+  [&#x27;overlayStart&#x27;,&#x27;overlayWin&#x27;,&#x27;overlayGameOver&#x27;].forEach(n =&gt; {
+    document.getElementById(n).style.display = n===id?&#x27;flex&#x27;:&#x27;none&#x27;;
+  });
+}
+function hideOverlays() {
+  [&#x27;overlayStart&#x27;,&#x27;overlayWin&#x27;,&#x27;overlayGameOver&#x27;].forEach(n =&gt; {
+    document.getElementById(n).style.display = &#x27;none&#x27;;
+  });
+}
+
+let toastTimer = null;
+function showToast(msg, error=false) {
+  const t = document.getElementById(&#x27;toast&#x27;);
+  t.textContent = msg;
+  t.className = &#x27;toast&#x27; + (error?&#x27; error&#x27;:&#x27;&#x27;) + &#x27; show&#x27;;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=&gt;{ t.classList.remove(&#x27;show&#x27;); }, 2200);
+}
+
+function updateHUD() {
+  document.getElementById(&#x27;hudLevel&#x27;).textContent = state.level + 1;
+  document.getElementById(&#x27;hudScore&#x27;).textContent = state.score;
+  document.getElementById(&#x27;hudLives&#x27;).textContent = &#x27;❤️&#x27;.repeat(Math.max(0,state.lives));
+  document.getElementById(&#x27;hudAttempts&#x27;).textContent = state.attempts;
+  document.getElementById(&#x27;levelNum&#x27;).textContent = state.level + 1;
+  const lv = LEVELS[state.level];
+  if(lv) {
+    document.getElementById(&#x27;levelDesc&#x27;).textContent = lv.desc;
+    document.getElementById(&#x27;predTarget&#x27;).textContent = lv.targetX.toFixed(0) + &#x27; m&#x27;;
+  }
+}
+
+function updateCalcs() {
+  const v0 = parseFloat(slV0.value);
+  const angle = parseFloat(slAngle.value);
+  const rad = angle * Math.PI / 180;
+  const vx = v0 * Math.cos(rad);
+  const vy = v0 * Math.sin(rad);
+  const T = 2 * vy / G;
+  const xmax = vx * T;
+  const hmax = vy*vy / (2*G);
+
+  document.getElementById(&#x27;valV0&#x27;).textContent = v0;
+  document.getElementById(&#x27;valAngle&#x27;).textContent = angle;
+  document.getElementById(&#x27;calcVx&#x27;).textContent = vx.toFixed(1);
+  document.getElementById(&#x27;calcVy&#x27;).textContent = vy.toFixed(1);
+  document.getElementById(&#x27;calcT&#x27;).textContent = T.toFixed(2);
+  document.getElementById(&#x27;calcXmax&#x27;).textContent = xmax.toFixed(1);
+  document.getElementById(&#x27;calcHmax&#x27;).textContent = hmax.toFixed(1);
+  document.getElementById(&#x27;predRange&#x27;).textContent = xmax.toFixed(1) + &#x27; m&#x27;;
+  document.getElementById(&#x27;predHeight&#x27;).textContent = hmax.toFixed(1) + &#x27; m&#x27;;
+  document.getElementById(&#x27;predTime&#x27;).textContent = T.toFixed(2) + &#x27; s&#x27;;
+
+  if(!state.flying) render();
+}
+
+function loadLevel(idx) {
+  if(idx &gt;= LEVELS.length) {
+    // All levels done!
+    showOverlay(&#x27;overlayWin&#x27;);
+    document.getElementById(&#x27;winPoints&#x27;).textContent = &#x27;🏆 ALL DONE!&#x27;;
+    document.getElementById(&#x27;winMsg&#x27;).textContent = &#x27;Ai completat toate nivelele! Scor: &#x27; + state.score;
+    document.getElementById(&#x27;btnNext&#x27;).textContent = &#x27;↺ JOACĂ DIN NOU&#x27;;
+    return;
+  }
+  state.level = idx;
+  state.attempts = 3;
+  state.flying = false;
+  state.proj = null;
+  const lv = LEVELS[idx];
+  state.targetCurrX = lv.targetX;
+  state.targetDir = 1;
+  cancelAnimationFrame(state.animFrame);
+  btnFire.disabled = false;
+  document.getElementById(&#x27;trajInfo&#x27;).style.display = &#x27;none&#x27;;
+  updateHUD();
+  updateCalcs();
+  startIdleLoop();
+}
+
+function resetGame() {
+  state.level = 0;
+  state.score = 0;
+  state.lives = 3;
+  state.attempts = 3;
+  state.flying = false;
+  state.proj = null;
+  loadLevel(0);
+  updateHUD();
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────────
+const slV0 = document.getElementById(&#x27;slV0&#x27;);
+const slAngle = document.getElementById(&#x27;slAngle&#x27;);
+const btnFire = document.getElementById(&#x27;btnFire&#x27;);
+
+slV0.addEventListener(&#x27;input&#x27;, updateCalcs);
+slAngle.addEventListener(&#x27;input&#x27;, updateCalcs);
+btnFire.addEventListener(&#x27;click&#x27;, launchProjectile);
+
+document.getElementById(&#x27;btnReset&#x27;).addEventListener(&#x27;click&#x27;, ()=&gt;{
+  cancelAnimationFrame(state.animFrame);
+  loadLevel(state.level);
+  hideOverlays();
+});
+
+document.getElementById(&#x27;btnShowPath&#x27;).addEventListener(&#x27;click&#x27;, ()=&gt;{
+  state.showPath = !state.showPath;
+  document.getElementById(&#x27;btnShowPath&#x27;).textContent = state.showPath ? &#x27;🚫 ASCUNDE TRAIECTORIA&#x27; : &#x27;👁 ARATĂ TRAIECTORIA&#x27;;
+  render();
+});
+
+document.getElementById(&#x27;btnStart&#x27;).addEventListener(&#x27;click&#x27;, ()=&gt;{
+  hideOverlays();
+  loadLevel(0);
+});
+
+document.getElementById(&#x27;btnNext&#x27;).addEventListener(&#x27;click&#x27;, ()=&gt;{
+  hideOverlays();
+  if(state.level + 1 &gt;= LEVELS.length) {
+    resetGame();
+  } else {
+    loadLevel(state.level + 1);
+  }
+});
+
+document.getElementById(&#x27;btnRestart&#x27;).addEventListener(&#x27;click&#x27;, ()=&gt;{
+  resetGame();
+  hideOverlays();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+resizeCanvas();
+updateCalcs();
+render();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"
+            class="game-frame"
+            style="height: 100%; border: 0; background: #050d1a;"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          ></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ ROBOT ═══════════════════ -->
+  <section id="robot" class="panel">
+
+    <!-- ── ACCESS GATE OVERLAY ── -->
+    <div id="robotAccessOverlay" style="
+      display:none; opacity:0;
+      position:fixed; inset:0; z-index:999;
+      background: rgba(7,11,20,0.97);
+      backdrop-filter: blur(12px);
+      align-items:center; justify-content:center;
+      flex-direction:column;
+      transition: opacity 0.35s;
+      font-family: var(--body);
+    ">
+
+      <!-- CHECKING state -->
+      <div id="raoChecking" style="display:none; flex-direction:column; align-items:center; gap:1.5rem; text-align:center; padding:2rem;">
+        <div style="width:72px; height:72px; border-radius:50%; border:3px solid rgba(0,212,255,0.2); border-top-color:var(--cyan); animation:raoSpin 0.9s linear infinite;"></div>
+        <div>
+          <div style="font-family:var(--head); font-weight:800; font-size:1.4rem; color:var(--text); margin-bottom:0.5rem;">Verificare conexiune...</div>
+          <div style="font-family:var(--mono); font-size:0.8rem; color:var(--muted);">Se caută rețeaua robotului · <span id="raoCheckIp">192.168.4.1</span></div>
+        </div>
+      </div>
+
+      <!-- ERROR state -->
+      <div id="raoError" style="display:none; flex-direction:column; align-items:center; gap:0; text-align:center; padding:2rem; max-width:520px; width:100%;">
+
+        <!-- Glitch icon -->
+        <div style="position:relative; margin-bottom:1.5rem;">
+          <div style="font-size:5rem; animation:raoGlitch 2.5s infinite; filter:drop-shadow(0 0 30px rgba(255,71,87,0.6));">⚠️</div>
+          <div style="position:absolute; inset:0; font-size:5rem; animation:raoGlitch2 2.5s infinite; opacity:0.4; color:var(--red);">⚠️</div>
+        </div>
+
+        <!-- Title -->
+        <div style="font-family:var(--mono); font-size:0.65rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--red); margin-bottom:0.75rem; animation:raoBlink 1s infinite;">⬛ EROARE CRITICĂ · COD 503</div>
+        <h2 style="font-family:var(--head); font-weight:800; font-size:clamp(1.4rem,5vw,2.2rem); line-height:1.1; color:var(--text); margin-bottom:0.75rem;">
+          NU SUNTEȚI CONECTAT<br><span style="color:var(--red);">LA ROBOT</span>
+        </h2>
+        <p style="font-family:var(--mono); font-size:0.8rem; color:var(--muted); line-height:1.7; margin-bottom:2rem;">
+          Laptopul nu este conectat la rețeaua WiFi a robotului.<br>
+          Conectați-vă la <span style="color:var(--cyan);">RoboLineFollower</span> și reîncercați.
+        </p>
+
+        <!-- Instruction steps -->
+        <div style="display:flex; flex-direction:column; gap:0.5rem; width:100%; margin-bottom:2rem; text-align:left;">
+          <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 1rem; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);">
+            <span style="font-size:1rem; width:24px; text-align:center;">1️⃣</span>
+            <span style="font-family:var(--mono); font-size:0.75rem; color:var(--muted);">Porniți robotul și modulul WiFi <span style="color:var(--orange);">(CH340 + ESP32)</span></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 1rem; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);">
+            <span style="font-size:1rem; width:24px; text-align:center;">2️⃣</span>
+            <span style="font-family:var(--mono); font-size:0.75rem; color:var(--muted);">Conectați laptopul la WiFi: <span style="color:var(--cyan);">RoboLineFollower</span> / parolă: <span style="color:var(--cyan);">robot1234</span></span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 1rem; border-radius:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);">
+            <span style="font-size:1rem; width:24px; text-align:center;">3️⃣</span>
+            <span style="font-family:var(--mono); font-size:0.75rem; color:var(--muted);">Gateway robot: <span style="color:var(--green);">192.168.4.1</span> · CAM: <span style="color:var(--green);">192.168.4.10</span></span>
+          </div>
+        </div>
+
+        <!-- Countdown bar -->
+        <div style="width:100%; margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.4rem;">
+            <span style="font-family:var(--mono); font-size:0.65rem; color:var(--muted);">RESTARTING PAGE...</span>
+            <span style="font-family:var(--mono); font-size:0.65rem; color:var(--red);"><span id="raoCountdown">7</span>s</span>
+          </div>
+          <div style="height:3px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;">
+            <div id="raoBar" style="height:100%; background:linear-gradient(90deg,var(--red),#ff7b2e); border-radius:2px; animation:raoBar 7s linear forwards;"></div>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:center;">
+          <button onclick="retryRobotConnection()" class="btn-primary" style="background:linear-gradient(135deg,#2ecc8b,#00d4a8); box-shadow:0 4px 20px rgba(46,204,139,0.35);">
+            🔄 Reîncearcă acum
+          </button>
+          <button onclick="_doOpenPanel('home'); showRobotOverlay('none');" class="btn-ghost">
+            ← Înapoi la Home
+          </button>
+        </div>
+
+      </div>
+    </div>
+    <!-- END ACCESS GATE -->
+
+
+    <div class="card card-glow" style="padding: 2rem 2.5rem; margin-bottom: 1.5rem; position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-60px; right:-60px; width:300px; height:300px; border-radius:50%; background: radial-gradient(circle, rgba(46,204,139,0.1) 0%, transparent 70%); pointer-events:none;"></div>
+      <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div style="width:52px; height:52px; border-radius:14px; background: linear-gradient(135deg, #2ecc8b, #00d4ff); display:flex; align-items:center; justify-content:center; font-size:1.5rem; box-shadow: 0 0 24px rgba(46,204,139,0.4); flex-shrink:0;">🤖</div>
+        <div>
+          <div class="section-badge" style="background:rgba(46,204,139,0.1); border-color:rgba(46,204,139,0.3); color:#2ecc8b;">🔴 LIVE · ESP32 Line Follower</div>
+          <h2 class="section-title" style="font-size: clamp(1.5rem, 4vw, 2.5rem);">Dashboard <span style="color:#2ecc8b;">Robot</span></h2>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+          <div id="robotStatusBadge" style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 1rem; border-radius:999px; background:rgba(107,127,163,0.15); border:1px solid rgba(107,127,163,0.25); font-family:var(--mono); font-size:0.7rem; color:var(--muted);">
+            <span id="robotStatusDot" style="width:8px; height:8px; border-radius:50%; background:var(--muted); display:inline-block;"></span>
+            <span id="robotStatusText">DECONECTAT</span>
+          </div>
+          <button id="robotConnectBtn" class="btn-primary" style="background: linear-gradient(135deg, #2ecc8b, #00d4a8); box-shadow: 0 4px 20px rgba(46,204,139,0.3);" onclick="robotConnect()">⚡ Conectează</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- IP Config + Telemetry row -->
+    <div style="display:grid; grid-template-columns: 340px 1fr; gap:1.5rem; margin-bottom:1.5rem;" id="robotTopGrid">
+
+      <!-- Config Card -->
+      <div class="card" style="padding:1.5rem;">
+        <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--muted); margin-bottom:1rem;">⚙ Configurare conexiune</div>
+
+        <div style="margin-bottom:1rem;">
+          <label style="font-size:0.8rem; color:var(--muted); display:block; margin-bottom:0.4rem; font-family:var(--mono);">IP ESP32 DevKit (controller)</label>
+          <input id="robotControllerIP" type="text" value="192.168.4.1" style="width:100%; padding:0.6rem 0.85rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:0.875rem; outline:none;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label style="font-size:0.8rem; color:var(--muted); display:block; margin-bottom:0.4rem; font-family:var(--mono);">IP ESP32-CAM (stream video)</label>
+          <input id="robotCamIP" type="text" value="192.168.4.10" style="width:100%; padding:0.6rem 0.85rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:0.875rem; outline:none;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+        <div style="margin-bottom:1.25rem;">
+          <label style="font-size:0.8rem; color:var(--muted); display:block; margin-bottom:0.4rem; font-family:var(--mono);">Port HTTP</label>
+          <input id="robotPort" type="text" value="80" style="width:100%; padding:0.6rem 0.85rem; border-radius:8px; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:0.875rem; outline:none;" onfocus="this.style.borderColor='var(--cyan)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+
+        <div style="border-top:1px solid var(--border); padding-top:1rem;">
+          <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:0.75rem;">📡 Endpoints active</div>
+          <div class="info-row"><span class="ik">Stream MJPEG</span><span class="iv" style="font-size:0.75rem;" id="endpointStream">/stream</span></div>
+          <div class="info-row"><span class="ik">Snapshot JPEG</span><span class="iv" style="font-size:0.75rem;" id="endpointJpg">/jpg</span></div>
+          <div class="info-row"><span class="ik">Telemetrie</span><span class="iv" style="font-size:0.75rem;" id="endpointTelemetry">/status</span></div>
+          <div class="info-row" style="border:none;"><span class="ik">Comandă</span><span class="iv" style="font-size:0.75rem;">/cmd</span></div>
+        </div>
+      </div>
+
+      <!-- Telemetry grid -->
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+        <!-- Stats row -->
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0.75rem;">
+          <div class="stat-chip" style="border-color:rgba(46,204,139,0.2);">
+            <div class="label">Viteză</div>
+            <div class="value" style="color:#2ecc8b;" id="telSpeed">—</div>
+            <div style="font-size:0.65rem; color:var(--muted); margin-top:2px; font-family:var(--mono);">cm/s</div>
+          </div>
+          <div class="stat-chip">
+            <div class="label">Eroare PID</div>
+            <div class="value" id="telError">—</div>
+            <div style="font-size:0.65rem; color:var(--muted); margin-top:2px; font-family:var(--mono);">px</div>
+          </div>
+          <div class="stat-chip" style="border-color:rgba(255,123,46,0.2);">
+            <div class="label">Motor Stg</div>
+            <div class="value" style="color:var(--orange);" id="telMotorL">—</div>
+            <div style="font-size:0.65rem; color:var(--muted); margin-top:2px; font-family:var(--mono);">PWM</div>
+          </div>
+          <div class="stat-chip" style="border-color:rgba(255,123,46,0.2);">
+            <div class="label">Motor Dr</div>
+            <div class="value" style="color:var(--orange);" id="telMotorR">—</div>
+            <div style="font-size:0.65rem; color:var(--muted); margin-top:2px; font-family:var(--mono);">PWM</div>
+          </div>
+        </div>
+
+        <!-- PID visualizer -->
+        <div class="card" style="padding:1.25rem; flex:1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+            <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted);">📊 Eroare PID în timp real</div>
+            <div style="display:flex; gap:0.5rem;">
+              <span style="font-family:var(--mono); font-size:0.65rem; color:var(--cyan);">Kp=<span id="pidKpDisplay">1.2</span></span>
+              <span style="font-family:var(--mono); font-size:0.65rem; color:var(--orange);">Ki=<span id="pidKiDisplay">0.0</span></span>
+              <span style="font-family:var(--mono); font-size:0.65rem; color:#2ecc8b;">Kd=<span id="pidKdDisplay">0.8</span></span>
+            </div>
+          </div>
+          <canvas id="pidChart" height="90" style="width:100%;"></canvas>
+        </div>
+
+        <!-- Sensor bar row -->
+        <div class="card" style="padding:1.25rem;">
+          <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:0.75rem;">🔬 Senzori IR (8 canale)</div>
+          <div style="display:flex; gap:6px; align-items:flex-end; height:52px;" id="sensorBars">
+            <!-- Filled by JS -->
+          </div>
+          <div style="display:flex; gap:6px; margin-top:4px;" id="sensorLabels"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video + Control -->
+    <div style="display:grid; grid-template-columns: 1fr 320px; gap:1.5rem; margin-bottom:1.5rem;" id="robotBottomGrid">
+
+      <!-- Camera -->
+      <div class="card" style="padding:0; overflow:hidden; position:relative; border-color:rgba(46,204,139,0.2);">
+        <div style="position:absolute; top:0; left:0; right:0; z-index:10; padding:0.75rem 1rem; background:linear-gradient(to bottom, rgba(7,11,20,0.9), transparent); display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#ff4757;animation:robotBlink 1s infinite;" id="recDot"></span>
+            <span style="font-family:var(--mono); font-size:0.7rem; color:var(--text);">ESP32-CAM · QVGA 320×240</span>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button onclick="robotToggleStream()" class="btn-ghost" style="padding:0.3rem 0.75rem; font-size:0.72rem;" id="streamToggleBtn">▶ Stream</button>
+            <button onclick="robotSnapshot()" class="btn-ghost" style="padding:0.3rem 0.75rem; font-size:0.72rem;">📸 Snap</button>
+          </div>
+        </div>
+
+        <!-- Video frame -->
+        <div style="position:relative; background:#020810; min-height:260px; display:flex; align-items:center; justify-content:center;" id="cameraFrame">
+          <img id="robotStream" style="width:100%; display:none; object-fit:cover;" alt="Stream ESP32-CAM">
+          <div id="cameraPlaceholder" style="text-align:center; padding:2rem;">
+            <div style="font-size:3rem; margin-bottom:1rem; opacity:0.3;">📹</div>
+            <div style="font-family:var(--mono); font-size:0.75rem; color:var(--muted);">Camera deconectată</div>
+            <div style="font-family:var(--mono); font-size:0.65rem; color:rgba(107,127,163,0.5); margin-top:0.5rem;">http://192.168.4.10/stream</div>
+          </div>
+          <!-- Scan overlay -->
+          <div id="cameraOverlay" style="position:absolute; inset:0; pointer-events:none; display:none;">
+            <div style="position:absolute; top:0; left:0; right:0; height:1px; background:rgba(46,204,139,0.5); animation:robotScan 2.5s linear infinite;"></div>
+            <!-- Corner brackets -->
+            <div style="position:absolute; top:12px; left:12px; width:20px; height:20px; border-top:2px solid #2ecc8b; border-left:2px solid #2ecc8b; border-radius:2px 0 0 0;"></div>
+            <div style="position:absolute; top:12px; right:12px; width:20px; height:20px; border-top:2px solid #2ecc8b; border-right:2px solid #2ecc8b; border-radius:0 2px 0 0;"></div>
+            <div style="position:absolute; bottom:12px; left:12px; width:20px; height:20px; border-bottom:2px solid #2ecc8b; border-left:2px solid #2ecc8b; border-radius:0 0 0 2px;"></div>
+            <div style="position:absolute; bottom:12px; right:12px; width:20px; height:20px; border-bottom:2px solid #2ecc8b; border-right:2px solid #2ecc8b; border-radius:0 0 2px 0;"></div>
+          </div>
+        </div>
+
+        <div style="padding:0.75rem 1rem; display:flex; gap:1rem; justify-content:space-between; align-items:center; border-top:1px solid var(--border);">
+          <div style="font-family:var(--mono); font-size:0.65rem; color:var(--muted);">FPS: <span id="camFps">—</span> · Latență: <span id="camLatency">—</span> ms</div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <span style="font-size:0.65rem; color:var(--muted); font-family:var(--mono);">Calitate:</span>
+            <input type="range" min="5" max="30" value="12" style="width:80px;" id="camQuality" title="JPEG quality">
+            <span style="font-family:var(--mono); font-size:0.65rem; color:var(--cyan);" id="camQualityVal">12</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Control Panel -->
+      <div style="display:flex; flex-direction:column; gap:1rem;">
+
+        <!-- D-pad -->
+        <div class="card" style="padding:1.25rem;">
+          <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:1rem;">🕹 Control manual</div>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.5rem; max-width:180px; margin:0 auto 1rem;">
+            <div></div>
+            <button class="robot-dpad" id="btnUp" data-cmd="F" onmousedown="robotCmd('F')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('F')" ontouchend="robotCmd('S')">▲</button>
+            <div></div>
+            <button class="robot-dpad" id="btnLeft" data-cmd="L" onmousedown="robotCmd('L')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('L')" ontouchend="robotCmd('S')">◄</button>
+            <button class="robot-dpad" style="background:rgba(255,71,87,0.15); border-color:rgba(255,71,87,0.3); color:var(--red);" onmousedown="robotCmd('S')" ontouchstart="robotCmd('S')">■</button>
+            <button class="robot-dpad" id="btnRight" data-cmd="R" onmousedown="robotCmd('R')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('R')" ontouchend="robotCmd('S')">►</button>
+            <div></div>
+            <button class="robot-dpad" id="btnDown" data-cmd="B" onmousedown="robotCmd('B')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('B')" ontouchend="robotCmd('S')">▼</button>
+            <div></div>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button onclick="robotCmd('AUTO')" class="btn-primary" style="flex:1; background:linear-gradient(135deg,#2ecc8b,#00d4a8); box-shadow:0 4px 15px rgba(46,204,139,0.3); padding:0.55rem 1rem; font-size:0.8rem; justify-content:center;">🤖 AUTO</button>
+            <button onclick="robotCmd('S')" class="btn-ghost" style="padding:0.55rem 1rem; font-size:0.8rem;">⏹ STOP</button>
+          </div>
+        </div>
+
+        <!-- PID tuning -->
+        <div class="card" style="padding:1.25rem; flex:1;">
+          <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:0.85rem;">🔧 Tuning PID</div>
+
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+              <span style="font-size:0.78rem; font-family:var(--mono); color:var(--cyan);">Kp</span>
+              <span style="font-family:var(--mono); font-size:0.72rem; color:var(--cyan);" id="pidKpVal">1.2</span>
+            </div>
+            <input type="range" min="0" max="5" step="0.1" value="1.2" id="pidKp" oninput="updatePID()">
+          </div>
+          <div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+              <span style="font-size:0.78rem; font-family:var(--mono); color:var(--orange);">Ki</span>
+              <span style="font-family:var(--mono); font-size:0.72rem; color:var(--orange);" id="pidKiVal">0.0</span>
+            </div>
+            <input type="range" class="orange-range" min="0" max="2" step="0.05" value="0" id="pidKi" oninput="updatePID()">
+          </div>
+          <div style="margin-bottom:1rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.35rem;">
+              <span style="font-size:0.78rem; font-family:var(--mono); color:#2ecc8b;">Kd</span>
+              <span style="font-family:var(--mono); font-size:0.72rem; color:#2ecc8b;" id="pidKdVal">0.8</span>
+            </div>
+            <input type="range" style="--thumb-color:#2ecc8b;" min="0" max="3" step="0.1" value="0.8" id="pidKd" oninput="updatePID()">
+          </div>
+          <button onclick="sendPID()" class="btn-primary" style="width:100%; justify-content:center; padding:0.55rem; font-size:0.8rem; background:linear-gradient(135deg,#2ecc8b,#00d4a8); box-shadow:0 4px 15px rgba(46,204,139,0.25);">📤 Trimite PID la robot</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Log card -->
+    <div class="card" style="padding:1.25rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+        <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted);">📋 Log comunicare</div>
+        <button onclick="clearRobotLog()" class="btn-ghost" style="padding:0.25rem 0.75rem; font-size:0.7rem;">🗑 Clear</button>
+      </div>
+      <div id="robotLog" style="font-family:var(--mono); font-size:0.72rem; color:var(--muted); line-height:1.8; max-height:140px; overflow-y:auto; background:rgba(0,0,0,0.2); border-radius:8px; padding:0.75rem;">
+        <div style="color:rgba(107,127,163,0.4);">// Log gol — conectează robotul pentru a vedea activitate...</div>
+      </div>
+    </div>
+
+  </section>
+
+
+
+<script>
+// ─── STARFIELD ────────────────────────────────────────────────────────────────
+const starCanvas = document.getElementById('starCanvas');
+const starCtx = starCanvas.getContext('2d');
+let stars = [];
+function initStars() {
+  starCanvas.width = window.innerWidth;
+  starCanvas.height = window.innerHeight;
+  stars = [];
+  for(let i=0; i<120; i++) {
+    stars.push({
+      x: Math.random() * starCanvas.width,
+      y: Math.random() * starCanvas.height,
+      r: Math.random() * 1.2 + 0.2,
+      a: Math.random(),
+      da: (Math.random() - 0.5) * 0.008,
+      speed: Math.random() * 0.15 + 0.05
+    });
+  }
+}
+function drawStars() {
+  starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+  stars.forEach(s => {
+    s.a += s.da;
+    if(s.a < 0.1) s.da = Math.abs(s.da);
+    if(s.a > 0.9) s.da = -Math.abs(s.da);
+    s.y += s.speed;
+    if(s.y > starCanvas.height) { s.y = 0; s.x = Math.random() * starCanvas.width; }
+    starCtx.beginPath();
+    starCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    starCtx.fillStyle = `rgba(180,210,255,${s.a})`;
+    starCtx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+initStars();
+drawStars();
+window.addEventListener('resize', initStars);
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+const panels = document.querySelectorAll('.panel');
+const navButtons = document.querySelectorAll('.nav-btn');
+const mobileNavButtons = document.querySelectorAll('.mobile-nav-btn');
+
+function openPanel(id) {
+  if (id === 'robot') {
+    // Must verify WiFi connection to robot network first
+    triggerRobotAccessCheck();
+    return;
+  }
+  _doOpenPanel(id);
+}
+
+function _doOpenPanel(id) {
+  panels.forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
+  navButtons.forEach(b => b.classList.toggle('active', b.dataset.panel === id));
+  mobileNavButtons.forEach(b => b.classList.toggle('active', b.dataset.panel === id));
+  const target = document.getElementById(id);
+  if(target) { target.style.display = 'block'; target.classList.add('active'); }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── ROBOT ACCESS GATE ────────────────────────────────────────────────────────
+let robotCheckInProgress = false;
+let robotRestartCountdown = null;
+
+function triggerRobotAccessCheck() {
+  if (robotCheckInProgress) return;
+  robotCheckInProgress = true;
+
+  // Show the robot panel with checking overlay
+  _doOpenPanel('robot');
+  showRobotOverlay('checking');
+
+  const ip = document.getElementById('robotControllerIP')?.value?.trim() || '192.168.4.1';
+  const port = document.getElementById('robotPort')?.value?.trim() || '80';
+  const checkIpEl = document.getElementById('raoCheckIp');
+  if (checkIpEl) checkIpEl.textContent = ip;
+
+  // Attempt to reach the robot gateway IP
+  const t0 = Date.now();
+  fetch(`http://${ip}:${port}/`, {
+    method: 'GET',
+    signal: AbortSignal.timeout(3500),
+    cache: 'no-store'
+  })
+  .then(r => {
+    // Any HTTP response = robot AP reachable
+    robotCheckInProgress = false;
+    showRobotOverlay('none');
+    robotLog(`Rețea robot detectată (${ip}) în ${Date.now()-t0}ms`, 'ok');
+  })
+  .catch(() => {
+    // No response = not connected to robot WiFi
+    robotCheckInProgress = false;
+    showRobotOverlay('error');
+  });
+}
+
+function showRobotOverlay(state) {
+  const overlay = document.getElementById('robotAccessOverlay');
+  const checking = document.getElementById('raoChecking');
+  const error = document.getElementById('raoError');
+  if (!overlay) return;
+
+  if (state === 'none') {
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => { overlay.style.display = 'none'; }, 400);
+    clearInterval(robotRestartCountdown);
+    return;
+  }
+
+  overlay.style.display = 'flex';
+  overlay.style.opacity = '1';
+  overlay.style.pointerEvents = 'auto';
+  checking.style.display = state === 'checking' ? 'flex' : 'none';
+  error.style.display = state === 'error' ? 'flex' : 'none';
+
+  if (state === 'error') {
+    // Reset bar animation
+    const bar = document.getElementById('raoBar');
+    if (bar) { bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = 'raoBar 7s linear forwards'; }
+    let secs = 7;
+    const countEl = document.getElementById('raoCountdown');
+    if (countEl) countEl.textContent = secs;
+    clearInterval(robotRestartCountdown);
+    robotRestartCountdown = setInterval(() => {
+      secs--;
+      if (countEl) countEl.textContent = secs;
+      if (secs <= 0) {
+        clearInterval(robotRestartCountdown);
+        // Go back to home panel
+        _doOpenPanel('home');
+        showRobotOverlay('none');
+      }
+    }, 1000);
+  }
+}
+
+// Retry button in the error overlay
+function retryRobotConnection() {
+  clearInterval(robotRestartCountdown);
+  triggerRobotAccessCheck();
+}
+
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileDrawer = document.getElementById('mobileDrawer');
+const mobileDrawerBackdrop = document.getElementById('mobileDrawerBackdrop');
+const mobileDrawerClose = document.getElementById('mobileDrawerClose');
+
+function openMobileDrawer() { mobileDrawer.classList.add('open'); mobileDrawerBackdrop.classList.add('open'); document.body.style.overflow='hidden'; }
+function closeMobileDrawer() { mobileDrawer.classList.remove('open'); mobileDrawerBackdrop.classList.remove('open'); document.body.style.overflow=''; }
+
+mobileMenuBtn?.addEventListener('click', openMobileDrawer);
+mobileDrawerClose?.addEventListener('click', closeMobileDrawer);
+mobileDrawerBackdrop?.addEventListener('click', closeMobileDrawer);
+
+navButtons.forEach(btn => btn.addEventListener('click', () => openPanel(btn.dataset.panel)));
+mobileNavButtons.forEach(btn => btn.addEventListener('click', () => { openPanel(btn.dataset.panel); closeMobileDrawer(); }));
+document.querySelectorAll('.go-panel').forEach(btn => btn.addEventListener('click', () => openPanel(btn.dataset.target)));
+window.addEventListener('resize', () => { if(window.innerWidth >= 768) closeMobileDrawer(); });
+
+// ─── LESSON TABS ─────────────────────────────────────────────────────────────
+const lessonTabs = document.querySelectorAll('.lesson-tab');
+const lessonPanels = {
+  mru: document.getElementById('lesson-mru'),
+  mruv: document.getElementById('lesson-mruv')
+};
+function openLesson(name) {
+  Object.entries(lessonPanels).forEach(([key, panel]) => {
+    panel.style.display = key === name ? 'block' : 'none';
+  });
+  lessonTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.lesson === name));
+}
+lessonTabs.forEach(btn => btn.addEventListener('click', () => openLesson(btn.dataset.lesson)));
+
+// ─── CHART DEFAULTS ────────────────────────────────────────────────────────────
+Chart.defaults.color = '#6b7fa3';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+// ─── MRU ─────────────────────────────────────────────────────────────────────
+const mruVelocity = document.getElementById('mruVelocity');
+const mruTime = document.getElementById('mruTime');
+const mruVLabel = document.getElementById('mruVLabel');
+const mruTLabel = document.getElementById('mruTLabel');
+const mruBadge = document.getElementById('mruBadge');
+const mruCurrentT = document.getElementById('mruCurrentT');
+const mruCurrentV = document.getElementById('mruCurrentV');
+const mruPositionOut = document.getElementById('mruPositionOut');
+const mruCar = document.getElementById('mruCar');
+
+const mruChart = new Chart(document.getElementById('mruChart'), {
+  type: 'line',
+  data: { labels: [], datasets: [{ data: [], tension: 0.1, borderWidth: 2.5, borderColor: '#3b9eff', backgroundColor: 'rgba(59,158,255,0.07)', fill: true, pointRadius: 0 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 700, easing: 'easeOutQuart' },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 't (s)', color: '#6b7fa3' }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b7fa3' } },
+      y: { title: { display: true, text: 'x (m)', color: '#6b7fa3' }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b7fa3' } }
+    }
+  }
+});
+
+function updateMRU() {
+  const v = parseFloat(mruVelocity.value), t = parseFloat(mruTime.value);
+  const x = v * t;
+  mruVLabel.textContent = `${v.toFixed(1)} m/s`;
+  mruTLabel.textContent = `${t.toFixed(1)} s`;
+  mruBadge.textContent = `v = ${v.toFixed(1)} m/s`;
+  mruCurrentT.textContent = `${t.toFixed(1)} s`;
+  mruCurrentV.textContent = `${v.toFixed(1)} m/s`;
+  mruPositionOut.textContent = `${x.toFixed(1)} m`;
+  mruCar.style.left = Math.max(0, Math.min(100, (x/50)*100)) + '%';
+  const labels = [], data = [];
+  for(let i=0; i<=t; i+=0.5) { labels.push(i.toFixed(1)); data.push((v*i).toFixed(2)); }
+  mruChart.data.labels = labels; mruChart.data.datasets[0].data = data; mruChart.update();
+}
+mruVelocity.addEventListener('input', updateMRU);
+mruTime.addEventListener('input', updateMRU);
+document.getElementById('mruReset').addEventListener('click', () => { mruVelocity.value=5; mruTime.value=10; updateMRU(); });
+let mruTimer = null;
+document.getElementById('mruPlay').addEventListener('click', () => {
+  clearInterval(mruTimer);
+  let cur = 0; const total = parseFloat(mruTime.value); const v = parseFloat(mruVelocity.value);
+  mruTimer = setInterval(() => {
+    cur += 0.1;
+    if(cur >= total) { cur = total; clearInterval(mruTimer); }
+    mruCurrentT.textContent = `${cur.toFixed(1)} s`;
+    mruPositionOut.textContent = `${(v*cur).toFixed(1)} m`;
+    mruCar.style.left = Math.max(0, Math.min(100, ((v*cur)/50)*100)) + '%';
+  }, 100);
+});
+updateMRU();
+
+// ─── MRUV ─────────────────────────────────────────────────────────────────────
+const mruvV0 = document.getElementById('mruvV0');
+const mruvA  = document.getElementById('mruvA');
+const mruvX0 = document.getElementById('mruvX0');
+const mruvV0Label  = document.getElementById('mruvV0Label');
+const mruvALabel   = document.getElementById('mruvALabel');
+const mruvX0Label  = document.getElementById('mruvX0Label');
+const mruvTimeOut  = document.getElementById('mruvTimeOut');
+const mruvVOut     = document.getElementById('mruvVOut');
+const mruvAOut     = document.getElementById('mruvAOut');
+const mruvXOut     = document.getElementById('mruvXOut');
+const mruvBadge    = document.getElementById('mruvBadge');
+const mruvCar      = document.getElementById('mruvCar');
+
+const makeChart = (id, color, yLabel, tension=0) => new Chart(document.getElementById(id), {
+  type: 'line',
+  data: { labels: [], datasets: [{ data: [], borderWidth: 2, tension, borderColor: color, backgroundColor: color.replace(')', ',0.08)').replace('rgb', 'rgba'), fill: true, pointRadius: 0 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 600 },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { title: { display: true, text: 't (s)', color: '#6b7fa3', font:{size:11} }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b7fa3', font:{size:10} } },
+      y: { title: { display: true, text: yLabel, color: '#6b7fa3', font:{size:11} }, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b7fa3', font:{size:10} } }
+    }
+  }
+});
+
+const chartAT = makeChart('mruvAT', '#ff7b2e', 'a (m/s²)', 0);
+const chartVT = makeChart('mruvVT', '#00d4ff', 'v (m/s)', 0.1);
+const chartXT = makeChart('mruvXT', '#2ecc8b', 'x (m)', 0.3);
+
+function updateMRUVStatic() {
+  const v0 = parseFloat(mruvV0.value), a = parseFloat(mruvA.value), x0 = parseFloat(mruvX0.value);
+  mruvV0Label.textContent = `${v0.toFixed(1)} m/s`;
+  mruvALabel.textContent  = `${a.toFixed(1)} m/s²`;
+  mruvX0Label.textContent = `${x0.toFixed(1)} m`;
+  mruvAOut.textContent    = `${a.toFixed(1)} m/s²`;
+  const labels=[], at=[], vt=[], xt=[];
+  for(let t=0; t<=8; t+=0.5) {
+    labels.push(t.toFixed(1));
+    at.push(a.toFixed(2));
+    vt.push((v0+a*t).toFixed(2));
+    xt.push((x0+v0*t+0.5*a*t*t).toFixed(2));
+  }
+  chartAT.data.labels=labels; chartAT.data.datasets[0].data=at; chartAT.update();
+  chartVT.data.labels=labels; chartVT.data.datasets[0].data=vt; chartVT.update();
+  chartXT.data.labels=labels; chartXT.data.datasets[0].data=xt; chartXT.update();
+  mruvTimeOut.textContent = '0.0 s';
+  mruvVOut.textContent = `${v0.toFixed(1)} m/s`;
+  mruvXOut.textContent = `${x0.toFixed(1)} m`;
+  mruvBadge.textContent = `v = ${v0.toFixed(1)} m/s`;
+  mruvCar.style.left = '5%';
+}
+[mruvV0, mruvA, mruvX0].forEach(el => el.addEventListener('input', updateMRUVStatic));
+let mruvTimer = null, mruvTime = 0;
+document.getElementById('mruvReset').addEventListener('click', () => { clearInterval(mruvTimer); mruvTime=0; updateMRUVStatic(); });
+document.getElementById('mruvPause').addEventListener('click', () => clearInterval(mruvTimer));
+document.getElementById('mruvPlay').addEventListener('click', () => {
+  clearInterval(mruvTimer);
+  mruvTimer = setInterval(() => {
+    mruvTime += 0.1;
+    if(mruvTime > 8) { clearInterval(mruvTimer); }
+    const v0=parseFloat(mruvV0.value), a=parseFloat(mruvA.value), x0=parseFloat(mruvX0.value);
+    const v = v0+a*mruvTime, x = x0+v0*mruvTime+0.5*a*mruvTime*mruvTime;
+    mruvTimeOut.textContent = `${mruvTime.toFixed(1)} s`;
+    mruvVOut.textContent = `${v.toFixed(1)} m/s`;
+    mruvXOut.textContent = `${x.toFixed(1)} m`;
+    mruvBadge.textContent = `v = ${v.toFixed(1)} m/s`;
+    mruvCar.style.left = Math.max(5, Math.min(95, 5+(x/80)*90)) + '%';
+  }, 100);
+});
+updateMRUVStatic();
+
+// ─── LAB ─────────────────────────────────────────────────────────────────────
+const labForceRange = document.getElementById('labForceRange');
+const labMassRange  = document.getElementById('labMassRange');
+const labCanvas     = document.getElementById('labCanvas');
+const labCtx        = labCanvas.getContext('2d');
+let labMu = 0, labRunning = false, labPaused = false;
+let labT = 0, labV = 0, labX = 0, labRafId = null, labLastTs = null;
+let labHistT = [], labHistV = [], labHistX = [];
+const LAB_MAX_T = 12, SCALE = 8;
+
+function setLabStatus(state) {
+  const el = document.getElementById('labStatus');
+  const map = {
+    'idle': ['idle','În așteptare'],
+    'running': ['running','Rulează'],
+    'paused': ['paused','Pauză'],
+    'done': ['done','Finalizat']
+  };
+  const [cls, txt] = map[state] || map['idle'];
+  el.className = `lab-status ${cls}`;
+  el.textContent = txt;
+}
+
+const labChartVelInst = new Chart(document.getElementById('labChartVel'), {
+  type: 'line',
+  data: { labels: [], datasets: [{ label:'v (m/s)', data:[], borderColor:'#2ecc8b', backgroundColor:'rgba(46,204,139,0.07)', borderWidth:2, fill:true, pointRadius:0, tension:0 }] },
+  options: { responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}},
+    scales: { x:{title:{display:true,text:'t (s)',color:'#6b7fa3'},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7fa3'}},
+              y:{title:{display:true,text:'v (m/s)',color:'#6b7fa3'},beginAtZero:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7fa3'}} } }
+});
+const labChartPosInst = new Chart(document.getElementById('labChartPos'), {
+  type: 'line',
+  data: { labels: [], datasets: [{ label:'x (m)', data:[], borderColor:'#3b9eff', backgroundColor:'rgba(59,158,255,0.07)', borderWidth:2, fill:true, pointRadius:0, tension:0.3 }] },
+  options: { responsive:true, maintainAspectRatio:false, animation:false, plugins:{legend:{display:false}},
+    scales: { x:{title:{display:true,text:'t (s)',color:'#6b7fa3'},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7fa3'}},
+              y:{title:{display:true,text:'x (m)',color:'#6b7fa3'},beginAtZero:true,grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7fa3'}} } }
+});
+const labChartFmaInst = new Chart(document.getElementById('labChartFma'), {
+  type: 'bar',
+  data: { labels:['F (N)','m (kg)','a (m/s²)'], datasets:[{ data:[20,5,4], backgroundColor:['rgba(255,123,46,0.7)','rgba(59,158,255,0.7)','rgba(0,212,255,0.7)'], borderRadius:8, borderWidth:0 }] },
+  options: { responsive:true, maintainAspectRatio:false, animation:{duration:400}, plugins:{legend:{display:false}},
+    scales: { y:{beginAtZero:true, grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#6b7fa3'}}, x:{ticks:{color:'#6b7fa3'}, grid:{display:false}} } }
+});
+
+document.querySelectorAll('.chart-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.lab-chart-panel').forEach(p => p.style.display='none');
+    const key = btn.dataset.chart;
+    document.getElementById('chart'+key.charAt(0).toUpperCase()+key.slice(1)).style.display='block';
+    if(key==='vel') labChartVelInst.resize();
+    if(key==='pos') labChartPosInst.resize();
+    if(key==='fma') labChartFmaInst.resize();
+  });
+});
+
+document.getElementById('frictionOff').addEventListener('click', () => {
+  labMu=0;
+  document.getElementById('frictionOff').className='btn-primary';
+  document.getElementById('frictionOff').style.cssText='padding:0.35rem 0.85rem;font-size:0.8rem;box-shadow:none;';
+  document.getElementById('frictionOn').className='btn-ghost';
+  document.getElementById('frictionOn').style.cssText='padding:0.35rem 0.85rem;font-size:0.8rem;';
+  updateLabStatic();
+});
+document.getElementById('frictionOn').addEventListener('click', () => {
+  labMu=0.3;
+  document.getElementById('frictionOn').className='btn-orange';
+  document.getElementById('frictionOn').style.cssText='padding:0.35rem 0.85rem;font-size:0.8rem;box-shadow:none;';
+  document.getElementById('frictionOff').className='btn-ghost';
+  document.getElementById('frictionOff').style.cssText='padding:0.35rem 0.85rem;font-size:0.8rem;';
+  updateLabStatic();
+});
+
+function getLabParams() {
+  const F=parseFloat(labForceRange.value), m=parseFloat(labMassRange.value), g=9.8;
+  const frictionF=labMu*m*g, Fnet=Math.max(0,F-frictionF), a=Fnet/m;
+  return {F,m,frictionF,Fnet,a};
+}
+
+function updateLabStatic() {
+  const {F,m,frictionF,Fnet,a} = getLabParams();
+  document.getElementById('labForceLabel').textContent=`${F.toFixed(0)} N`;
+  document.getElementById('labMassLabel').textContent=`${m.toFixed(0)} kg`;
+  document.getElementById('labCalcF').textContent=`${F.toFixed(0)} N`;
+  document.getElementById('labCalcM').textContent=`${m.toFixed(0)} kg`;
+  document.getElementById('labCalcFr').textContent=`${frictionF.toFixed(1)} N`;
+  document.getElementById('labCalcFnet').textContent=`${Fnet.toFixed(1)} N`;
+  document.getElementById('labCalcA').textContent=`${a.toFixed(2)} m/s²`;
+  labChartFmaInst.data.datasets[0].data=[F,m,parseFloat(a.toFixed(2))];
+  labChartFmaInst.update();
+  drawLabCanvas(0,0,a,F,m);
+}
+
+function drawLabCanvas(x,v,a,F,m) {
+  const W=labCanvas.width, H=labCanvas.height;
+  labCtx.clearRect(0,0,W,H);
+  // Background
+  labCtx.fillStyle='#0d1526'; labCtx.fillRect(0,0,W,H);
+  // Grid
+  labCtx.strokeStyle='rgba(59,158,255,0.05)'; labCtx.lineWidth=1;
+  for(let gx=0;gx<W;gx+=32){labCtx.beginPath();labCtx.moveTo(gx,0);labCtx.lineTo(gx,H);labCtx.stroke();}
+  for(let gy=0;gy<H;gy+=32){labCtx.beginPath();labCtx.moveTo(0,gy);labCtx.lineTo(W,gy);labCtx.stroke();}
+  // Floor
+  const grad2=labCtx.createLinearGradient(0,H-36,0,H);
+  grad2.addColorStop(0,'rgba(59,158,255,0.15)'); grad2.addColorStop(1,'rgba(59,158,255,0.05)');
+  labCtx.fillStyle=grad2; labCtx.fillRect(0,H-36,W,36);
+  labCtx.strokeStyle='rgba(59,158,255,0.3)'; labCtx.lineWidth=1.5;
+  labCtx.beginPath(); labCtx.moveTo(0,H-36); labCtx.lineTo(W,H-36); labCtx.stroke();
+  // Floor markers
+  labCtx.strokeStyle='rgba(59,158,255,0.15)'; labCtx.lineWidth=1;
+  for(let tx=0;tx<W;tx+=50){labCtx.beginPath();labCtx.moveTo(tx,H-36);labCtx.lineTo(tx,H-30);labCtx.stroke();}
+  const blockW=Math.max(48,Math.min(90,80-m)), blockH=blockW;
+  const margin=60, maxPixTravel=W-margin-blockW-20;
+  const pixX=margin+Math.min(x*SCALE,maxPixTravel), blockY=H-36-blockH;
+  // Force arrows
+  if(labMu>0&&v>0){
+    const frLen=Math.max(20,Math.min(80,labMu*m*9.8*1.5));
+    drawArrow(labCtx,pixX+blockW/2,blockY+blockH/2,pixX+blockW/2-frLen,blockY+blockH/2,'#ff4757','f');
+  }
+  const fArrowLen=Math.max(20,Math.min(130,F*1.2));
+  if(F>0) drawArrow(labCtx,pixX-10,blockY+blockH/2,pixX-10+fArrowLen,blockY+blockH/2,'#ff7b2e','F');
+  if(a>0.05){
+    const aLen=Math.max(15,Math.min(100,a*10));
+    drawArrow(labCtx,pixX+blockW/2,blockY-18,pixX+blockW/2+aLen,blockY-18,'#00d4ff','a');
+  }
+  // Block shadow
+  labCtx.fillStyle='rgba(0,212,255,0.08)';
+  labCtx.beginPath(); labCtx.ellipse(pixX+blockW/2,H-36+4,blockW/2,5,0,0,Math.PI*2); labCtx.fill();
+  // Block gradient
+  const grad=labCtx.createLinearGradient(pixX,blockY,pixX+blockW,blockY+blockH);
+  grad.addColorStop(0,'#0f6fff'); grad.addColorStop(1,'#00478d');
+  labCtx.fillStyle=grad;
+  roundRect(labCtx,pixX,blockY,blockW,blockH,10); labCtx.fill();
+  // Block glow
+  labCtx.shadowColor='rgba(59,158,255,0.4)'; labCtx.shadowBlur=15;
+  labCtx.fillStyle=grad;
+  roundRect(labCtx,pixX,blockY,blockW,blockH,10); labCtx.fill();
+  labCtx.shadowBlur=0;
+  // Block shine
+  labCtx.fillStyle='rgba(255,255,255,0.1)';
+  roundRect(labCtx,pixX+4,blockY+4,blockW-8,blockH*0.35,6); labCtx.fill();
+  // Mass label
+  labCtx.fillStyle='white';
+  labCtx.font=`bold ${Math.max(10,blockW*0.22)}px 'DM Mono',monospace`;
+  labCtx.textAlign='center'; labCtx.textBaseline='middle';
+  labCtx.fillText(`${m} kg`,pixX+blockW/2,blockY+blockH/2);
+  // Velocity badge
+  if(v>0.05){
+    labCtx.fillStyle='rgba(0,212,255,0.15)';
+    roundRect(labCtx,pixX+blockW/2-40,blockY-48,80,22,6); labCtx.fill();
+    labCtx.strokeStyle='rgba(0,212,255,0.4)'; labCtx.lineWidth=1;
+    roundRect(labCtx,pixX+blockW/2-40,blockY-48,80,22,6); labCtx.stroke();
+    labCtx.fillStyle='#00d4ff';
+    labCtx.font='bold 10px DM Mono,monospace';
+    labCtx.textAlign='center'; labCtx.textBaseline='middle';
+    labCtx.fillText(`v = ${v.toFixed(1)} m/s`,pixX+blockW/2,blockY-37);
+  }
+  // Legend
+  labCtx.textAlign='left'; labCtx.textBaseline='alphabetic';
+  if(F>0){labCtx.fillStyle='#ff7b2e';labCtx.font='bold 11px DM Mono,monospace';labCtx.fillText('→ F (forță)',10,22);}
+  if(labMu>0){labCtx.fillStyle='#ff4757';labCtx.fillText('← f (frecare)',10,40);}
+  if(a>0.05){labCtx.fillStyle='#00d4ff';labCtx.fillText('→ a (accelerație)',10,58);}
+}
+
+function drawArrow(ctx,x1,y1,x2,y2,color,label){
+  const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  if(len<5)return;
+  const angle=Math.atan2(dy,dx),hs=10;
+  ctx.save();
+  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;ctx.lineCap='round';
+  ctx.shadowColor=color;ctx.shadowBlur=8;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hs*Math.cos(angle-0.4),y2-hs*Math.sin(angle-0.4));
+  ctx.lineTo(x2-hs*Math.cos(angle+0.4),y2-hs*Math.sin(angle+0.4));
+  ctx.closePath();ctx.fill();
+  ctx.shadowBlur=0;ctx.restore();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function labLoop(ts){
+  if(!labRunning||labPaused){return;}
+  if(!labLastTs){labLastTs=ts;}
+  const dt=Math.min((ts-labLastTs)/1000,0.05);
+  labLastTs=ts;
+  const {a,F,m}=getLabParams();
+  labV+=a*dt; labX+=labV*dt; labT+=dt;
+  if(labT%0.1<dt){
+    labHistT.push(labT.toFixed(2));labHistV.push(labV.toFixed(2));labHistX.push(labX.toFixed(2));
+    labChartVelInst.data.labels=labHistT;labChartVelInst.data.datasets[0].data=labHistV;labChartVelInst.update();
+    labChartPosInst.data.labels=labHistT;labChartPosInst.data.datasets[0].data=labHistX;labChartPosInst.update();
+  }
+  document.getElementById('labTime').textContent=`${labT.toFixed(2)} s`;
+  document.getElementById('labAccel').textContent=`${a.toFixed(2)} m/s²`;
+  document.getElementById('labViteza').textContent=`${labV.toFixed(2)} m/s`;
+  document.getElementById('labDist').textContent=`${labX.toFixed(2)} m`;
+  drawLabCanvas(labX,labV,a,F,m);
+  if(labT>=LAB_MAX_T){labRunning=false;setLabStatus('done');return;}
+  labRafId=requestAnimationFrame(labLoop);
+}
+
+document.getElementById('labStart').addEventListener('click',()=>{
+  if(labPaused){labPaused=false;labLastTs=null;labRafId=requestAnimationFrame(labLoop);return;}
+  labRunning=true;labPaused=false;labT=0;labV=0;labX=0;
+  labHistT=[];labHistV=[];labHistX=[];
+  labChartVelInst.data.labels=[];labChartVelInst.data.datasets[0].data=[];labChartVelInst.update();
+  labChartPosInst.data.labels=[];labChartPosInst.data.datasets[0].data=[];labChartPosInst.update();
+  labLastTs=null;setLabStatus('running');
+  if(labRafId)cancelAnimationFrame(labRafId);
+  labRafId=requestAnimationFrame(labLoop);
+});
+document.getElementById('labPause').addEventListener('click',()=>{
+  if(!labRunning)return;
+  labPaused=!labPaused;
+  document.getElementById('labPause').textContent=labPaused?'▶':'⏸';
+  setLabStatus(labPaused?'paused':'running');
+  if(!labPaused){labLastTs=null;labRafId=requestAnimationFrame(labLoop);}
+});
+document.getElementById('labReset').addEventListener('click',()=>{
+  labRunning=false;labPaused=false;
+  if(labRafId)cancelAnimationFrame(labRafId);
+  labT=0;labV=0;labX=0;labLastTs=null;
+  labHistT=[];labHistV=[];labHistX=[];
+  labChartVelInst.data.labels=[];labChartVelInst.data.datasets[0].data=[];labChartVelInst.update();
+  labChartPosInst.data.labels=[];labChartPosInst.data.datasets[0].data=[];labChartPosInst.update();
+  document.getElementById('labTime').textContent='0.00 s';
+  document.getElementById('labAccel').textContent='0.00 m/s²';
+  document.getElementById('labViteza').textContent='0.00 m/s';
+  document.getElementById('labDist').textContent='0.00 m';
+  document.getElementById('labPause').textContent='⏸';
+  setLabStatus('idle');
+  updateLabStatic();
+});
+
+
+// ─── CEAS TIMP REAL ───────────────────────────────────────────────────────────
+(function initClock() {
+  const ZILE = ['Duminică','Luni','Marți','Miercuri','Joi','Vineri','Sâmbătă'];
+  const LUNI = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+  const AMPM_LABELS = [
+    [0,  5,  '🌑 NOAPTE TÂRZIU'],
+    [5,  7,  '🌅 RĂSĂRIT'],
+    [7,  12, '☀️ DIMINEAȚĂ'],
+    [12, 14, '🌞 PRÂNZ'],
+    [14, 18, '🌤 DUPĂ-AMIAZĂ'],
+    [18, 21, '🌆 SEARĂ'],
+    [21, 24, '🌙 NOAPTE']
+  ];
+
+  const canvas = document.getElementById('analogClock');
+  const ctx    = canvas ? canvas.getContext('2d') : null;
+  const DPR    = window.devicePixelRatio || 1;
+  if (canvas && ctx) {
+    canvas.width  = 90 * DPR;
+    canvas.height = 90 * DPR;
+    canvas.style.width  = '90px';
+    canvas.style.height = '90px';
+    ctx.scale(DPR, DPR);
+  }
+
+  function weekNumber(d) {
+    const onejan = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+  }
+  function dayOfYear(d) {
+    return Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  }
+  function daysInYear(y) {
+    return ((y % 4 === 0 && y % 100 !== 0) || y % 400 === 0) ? 366 : 365;
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function drawClock(h, m, s) {
+    if (!ctx) return;
+    const cx = 45, cy = 45, R = 40;
+    ctx.clearRect(0, 0, 90, 90);
+
+    // Outer glow ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Seconds arc progress
+    const secAngle = (s / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, -Math.PI / 2, secAngle);
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Hour ticks
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      const main = i % 3 === 0;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * (main ? 30 : 33), cy + Math.sin(a) * (main ? 30 : 33));
+      ctx.lineTo(cx + Math.cos(a) * 37, cy + Math.sin(a) * 37);
+      ctx.strokeStyle = main ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = main ? 1.5 : 0.8;
+      ctx.stroke();
+    }
+
+    function hand(angle, length, width, color, glow) {
+      const a = angle - Math.PI / 2;
+      ctx.save();
+      if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 7; }
+      ctx.beginPath();
+      ctx.moveTo(cx - Math.cos(a) * 5, cy - Math.sin(a) * 5);
+      ctx.lineTo(cx + Math.cos(a) * length, cy + Math.sin(a) * length);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    hand((h % 12 + m / 60) / 12 * Math.PI * 2, 21, 2.8, '#e8f0ff', false);
+    hand((m + s / 60) / 60 * Math.PI * 2, 30, 1.8, '#3b9eff', false);
+    hand(s / 60 * Math.PI * 2, 34, 1.2, '#ff4757', true);
+
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#00d4ff';
+    ctx.shadowColor = '#00d4ff';
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  function tick() {
+    const now = new Date();
+    const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+
+    const timeEl = document.getElementById('clockTime');
+    if (timeEl) timeEl.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+    const secEl = document.getElementById('clockSeconds');
+    if (secEl) {
+      const filled = Math.round((s / 60) * 20);
+      secEl.textContent = '▪'.repeat(filled) + '▫'.repeat(20 - filled);
+    }
+
+    const dayEl = document.getElementById('clockDay');
+    if (dayEl) dayEl.textContent = ZILE[now.getDay()];
+
+    const dateEl = document.getElementById('clockDate');
+    if (dateEl) dateEl.textContent = `${pad(now.getDate())} ${LUNI[now.getMonth()]} ${now.getFullYear()}`;
+
+    const doyEl = document.getElementById('clockDayOfYear');
+    if (doyEl) doyEl.textContent = `ZI ${String(dayOfYear(now)).padStart(3,'0')} DIN ${daysInYear(now.getFullYear())}`;
+
+    const wkEl = document.getElementById('clockWeek');
+    if (wkEl) wkEl.textContent = `Săpt. ${pad(weekNumber(now))}`;
+
+    const ampmEl = document.getElementById('clockAmPm');
+    if (ampmEl) {
+      for (const [from, to, label] of AMPM_LABELS) {
+        if (h >= from && h < to) { ampmEl.textContent = label; break; }
+      }
+    }
+
+    drawClock(h, m, s + ms / 1000);
+  }
+
+  tick();
+  setInterval(tick, 1000);
+
+  function clockResponsive() {
+    const div = document.querySelector('.clock-divider');
+    if (div) div.style.display = window.innerWidth < 600 ? 'none' : 'block';
+  }
+  window.addEventListener('resize', clockResponsive);
+  clockResponsive();
+})();
+
+// ─── ROBOT DASHBOARD ─────────────────────────────────────────────────────────
+let robotConnected = false;
+let robotStreamActive = false;
+let robotPollInterval = null;
+let robotStreamInterval = null;
+let pidHistory = [];
+let pidChartInst = null;
+let frameCount = 0, fpsTimer = 0, lastFpsTs = 0;
+
+// ── PID Chart init ────────────────────────────────────────────────────────────
+(function initPidChart() {
+  const ctx = document.getElementById('pidChart');
+  if (!ctx) return;
+  pidChartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Eroare PID',
+        data: [],
+        borderColor: '#2ecc8b',
+        backgroundColor: 'rgba(46,204,139,0.08)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#6b7fa3', font: { size: 9, family: 'DM Mono' }, maxTicksLimit: 5 },
+          border: { display: false }
+        }
+      }
+    }
+  });
+})();
+
+// ── Sensor bars init ──────────────────────────────────────────────────────────
+(function initSensorBars() {
+  const barsEl = document.getElementById('sensorBars');
+  const labelsEl = document.getElementById('sensorLabels');
+  if (!barsEl) return;
+  for (let i = 0; i < 8; i++) {
+    const bar = document.createElement('div');
+    bar.id = 'sbar' + i;
+    bar.style.cssText = 'flex:1; border-radius:4px 4px 0 0; background:rgba(255,255,255,0.08); height:8px; transition:height 0.2s, background 0.2s;';
+    barsEl.appendChild(bar);
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'flex:1; text-align:center; font-family:var(--mono); font-size:0.55rem; color:var(--muted);';
+    lbl.textContent = 'S' + (i + 1);
+    labelsEl.appendChild(lbl);
+  }
+})();
+
+function setSensorBars(values) {
+  // values: array of 8 numbers 0–1023
+  for (let i = 0; i < 8; i++) {
+    const bar = document.getElementById('sbar' + i);
+    if (!bar) continue;
+    const v = values[i] || 0;
+    const pct = Math.round((v / 1023) * 100);
+    bar.style.height = Math.max(8, pct * 0.44) + 'px';
+    const onLine = v > 512;
+    bar.style.background = onLine ? '#2ecc8b' : 'rgba(255,255,255,0.08)';
+    bar.style.boxShadow = onLine ? '0 0 8px rgba(46,204,139,0.5)' : 'none';
+  }
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function robotLog(msg, type) {
+  const el = document.getElementById('robotLog');
+  if (!el) return;
+  const colors = { ok: 'var(--green)', err: 'var(--red)', info: 'var(--cyan)', cmd: 'var(--orange)' };
+  const icons = { ok: '✓', err: '✗', info: '·', cmd: '→' };
+  const color = colors[type] || 'var(--muted)';
+  const icon = icons[type] || '·';
+  const ts = new Date().toLocaleTimeString('ro-RO', { hour12: false });
+  const line = document.createElement('div');
+  line.style.color = color;
+  line.innerHTML = `<span style="color:rgba(107,127,163,0.5);">${ts}</span> ${icon} ${msg}`;
+  // Remove placeholder
+  const ph = el.querySelector('div');
+  if (ph && ph.textContent.includes('Log gol')) ph.remove();
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+  // Keep max 60 lines
+  while (el.children.length > 60) el.removeChild(el.firstChild);
+}
+
+function clearRobotLog() {
+  const el = document.getElementById('robotLog');
+  if (el) el.innerHTML = '<div style="color:rgba(107,127,163,0.4);">// Log cleared</div>';
+}
+
+// ── Status indicator ──────────────────────────────────────────────────────────
+function setRobotStatus(connected) {
+  robotConnected = connected;
+  const dot = document.getElementById('robotStatusDot');
+  const text = document.getElementById('robotStatusText');
+  const btn = document.getElementById('robotConnectBtn');
+  if (connected) {
+    dot.style.background = '#2ecc8b';
+    dot.style.boxShadow = '0 0 8px rgba(46,204,139,0.7)';
+    dot.style.animation = 'none';
+    text.textContent = 'CONECTAT';
+    document.getElementById('robotStatusBadge').style.background = 'rgba(46,204,139,0.1)';
+    document.getElementById('robotStatusBadge').style.borderColor = 'rgba(46,204,139,0.3)';
+    text.style.color = '#2ecc8b';
+    btn.textContent = '⏹ Deconectează';
+    btn.style.background = 'linear-gradient(135deg,var(--red),#cc2200)';
+    btn.style.boxShadow = '0 4px 20px rgba(255,71,87,0.3)';
+  } else {
+    dot.style.background = 'var(--muted)';
+    dot.style.boxShadow = 'none';
+    dot.style.animation = '';
+    text.textContent = 'DECONECTAT';
+    document.getElementById('robotStatusBadge').style.background = 'rgba(107,127,163,0.15)';
+    document.getElementById('robotStatusBadge').style.borderColor = 'rgba(107,127,163,0.25)';
+    text.style.color = 'var(--muted)';
+    btn.textContent = '⚡ Conectează';
+    btn.style.background = 'linear-gradient(135deg,#2ecc8b,#00d4a8)';
+    btn.style.boxShadow = '0 4px 20px rgba(46,204,139,0.3)';
+    document.getElementById('telSpeed').textContent = '—';
+    document.getElementById('telError').textContent = '—';
+    document.getElementById('telMotorL').textContent = '—';
+    document.getElementById('telMotorR').textContent = '—';
+    document.getElementById('camFps').textContent = '—';
+    document.getElementById('camLatency').textContent = '—';
+    setSensorBars([0,0,0,0,0,0,0,0]);
+  }
+}
+
+// ── Connect / Disconnect ──────────────────────────────────────────────────────
+function robotConnect() {
+  if (robotConnected) {
+    robotDisconnect();
+    return;
+  }
+  const ip = document.getElementById('robotControllerIP').value.trim();
+  const port = document.getElementById('robotPort').value.trim();
+  const base = `http://${ip}:${port}`;
+  robotLog(`Încerc conectarea la ${base}...`, 'info');
+
+  // Try to reach /status endpoint
+  fetch(`${base}/status`, { signal: AbortSignal.timeout(3000) })
+    .then(r => r.json())
+    .then(data => {
+      setRobotStatus(true);
+      robotLog(`Conectat la ESP32 (${ip})`, 'ok');
+      robotLog(`Firmware: ${data.fw || 'LineFollower_v3'}`, 'info');
+      startRobotPoll();
+    })
+    .catch(() => {
+      // Demo / fallback mode — works offline too
+      setRobotStatus(true);
+      robotLog(`Robot la ${ip} nu răspunde direct (CORS/offline).`, 'err');
+      robotLog('Dashboard activ în mod DEMO — telemetria este simulată.', 'info');
+      startRobotPollDemo();
+    });
+}
+
+function robotDisconnect() {
+  clearInterval(robotPollInterval);
+  clearInterval(robotStreamInterval);
+  robotStreamActive = false;
+  setRobotStatus(false);
+  stopStream();
+  robotLog('Deconectat.', 'info');
+}
+
+// ── Polling telemetry (real) ──────────────────────────────────────────────────
+function startRobotPoll() {
+  const ip = document.getElementById('robotControllerIP').value.trim();
+  const port = document.getElementById('robotPort').value.trim();
+  const base = `http://${ip}:${port}`;
+  robotPollInterval = setInterval(() => {
+    fetch(`${base}/status`, { signal: AbortSignal.timeout(2000) })
+      .then(r => r.json())
+      .then(d => applyTelemetry(d))
+      .catch(() => {});
+  }, 500);
+}
+
+// ── Demo / simulation mode ────────────────────────────────────────────────────
+let demoT = 0;
+function startRobotPollDemo() {
+  robotPollInterval = setInterval(() => {
+    demoT += 0.1;
+    const err = Math.round(Math.sin(demoT * 1.2) * 45 + Math.random() * 8 - 4);
+    const spd = 180 + Math.round(Math.sin(demoT * 0.5) * 20);
+    const mL = Math.max(0, Math.min(255, spd - err));
+    const mR = Math.max(0, Math.min(255, spd + err));
+    const sensors = Array.from({ length: 8 }, (_, i) => {
+      const center = 3.5;
+      const linePos = center + Math.sin(demoT * 1.2) * 3;
+      const dist = Math.abs(i - linePos);
+      return dist < 1.2 ? Math.round(800 + Math.random() * 200) : Math.round(Math.random() * 120);
+    });
+    applyTelemetry({ speed: spd, error: err, motorL: mL, motorR: mR, sensors });
+  }, 200);
+}
+
+function applyTelemetry(d) {
+  if (d.speed !== undefined) document.getElementById('telSpeed').textContent = d.speed;
+  if (d.error !== undefined) {
+    document.getElementById('telError').textContent = d.error;
+    // PID chart update
+    pidHistory.push(d.error);
+    if (pidHistory.length > 80) pidHistory.shift();
+    if (pidChartInst) {
+      pidChartInst.data.labels = pidHistory.map((_, i) => i);
+      pidChartInst.data.datasets[0].data = pidHistory;
+      pidChartInst.update('none');
+    }
+  }
+  if (d.motorL !== undefined) document.getElementById('telMotorL').textContent = d.motorL;
+  if (d.motorR !== undefined) document.getElementById('telMotorR').textContent = d.motorR;
+  if (d.sensors) setSensorBars(d.sensors);
+}
+
+// ── Stream control ────────────────────────────────────────────────────────────
+function robotToggleStream() {
+  if (robotStreamActive) stopStream();
+  else startStream();
+}
+
+function startStream() {
+  const camIp = document.getElementById('robotCamIP').value.trim();
+  const port = document.getElementById('robotPort').value.trim();
+  const imgEl = document.getElementById('robotStream');
+  const placeholder = document.getElementById('cameraPlaceholder');
+  const overlay = document.getElementById('cameraOverlay');
+  const btn = document.getElementById('streamToggleBtn');
+
+  // Try MJPEG stream first, fallback to /jpg polling
+  const streamUrl = `http://${camIp}:${port}/stream`;
+  imgEl.src = streamUrl;
+  imgEl.style.display = 'block';
+  placeholder.style.display = 'none';
+  overlay.style.display = 'block';
+  btn.textContent = '⏹ Stop';
+  robotStreamActive = true;
+  document.getElementById('recDot').style.animation = 'robotBlink 1s infinite';
+  robotLog(`Stream pornit → ${streamUrl}`, 'ok');
+
+  imgEl.onerror = () => {
+    // Fallback: /jpg polling
+    imgEl.onerror = null;
+    robotLog('MJPEG stream indisponibil — comutat pe polling /jpg', 'info');
+    clearInterval(robotStreamInterval);
+    robotStreamInterval = setInterval(() => {
+      const t0 = performance.now();
+      const jpgUrl = `http://${camIp}:${port}/jpg?t=${Date.now()}`;
+      const tmpImg = new Image();
+      tmpImg.onload = () => {
+        imgEl.src = tmpImg.src;
+        const lat = Math.round(performance.now() - t0);
+        frameCount++;
+        const now = performance.now();
+        if (now - lastFpsTs > 1000) {
+          document.getElementById('camFps').textContent = frameCount;
+          document.getElementById('camLatency').textContent = lat;
+          frameCount = 0; lastFpsTs = now;
+        }
+      };
+      tmpImg.src = jpgUrl;
+    }, 200);
+  };
+}
+
+function stopStream() {
+  const imgEl = document.getElementById('robotStream');
+  const placeholder = document.getElementById('cameraPlaceholder');
+  const overlay = document.getElementById('cameraOverlay');
+  const btn = document.getElementById('streamToggleBtn');
+  clearInterval(robotStreamInterval);
+  imgEl.src = '';
+  imgEl.style.display = 'none';
+  placeholder.style.display = 'flex';
+  overlay.style.display = 'none';
+  btn.textContent = '▶ Stream';
+  robotStreamActive = false;
+  document.getElementById('recDot').style.animation = '';
+  document.getElementById('recDot').style.opacity = '0.3';
+}
+
+function robotSnapshot() {
+  const camIp = document.getElementById('robotCamIP').value.trim();
+  const port = document.getElementById('robotPort').value.trim();
+  const url = `http://${camIp}:${port}/jpg?t=${Date.now()}`;
+  window.open(url, '_blank');
+  robotLog(`Snapshot → ${url}`, 'cmd');
+}
+
+// ── Commands ──────────────────────────────────────────────────────────────────
+function robotCmd(cmd) {
+  const ip = document.getElementById('robotControllerIP').value.trim();
+  const port = document.getElementById('robotPort').value.trim();
+  const cmdNames = { F: 'ÎNAINTE', B: 'ÎNAPOI', L: 'STÂNGA', R: 'DREAPTA', S: 'STOP', AUTO: 'MOD AUTO' };
+  robotLog(`Comandă: ${cmdNames[cmd] || cmd}`, 'cmd');
+  if (!robotConnected) { robotLog('Robot deconectat — comanda nu a fost trimisă.', 'err'); return; }
+  fetch(`http://${ip}:${port}/cmd?v=${cmd}`, { signal: AbortSignal.timeout(1000) })
+    .catch(() => {}); // silent fail in demo mode
+}
+
+// ── PID update ────────────────────────────────────────────────────────────────
+function updatePID() {
+  const kp = parseFloat(document.getElementById('pidKp').value).toFixed(1);
+  const ki = parseFloat(document.getElementById('pidKi').value).toFixed(2);
+  const kd = parseFloat(document.getElementById('pidKd').value).toFixed(1);
+  document.getElementById('pidKpVal').textContent = kp;
+  document.getElementById('pidKiVal').textContent = ki;
+  document.getElementById('pidKdVal').textContent = kd;
+  document.getElementById('pidKpDisplay').textContent = kp;
+  document.getElementById('pidKiDisplay').textContent = ki;
+  document.getElementById('pidKdDisplay').textContent = kd;
+}
+
+function sendPID() {
+  const kp = document.getElementById('pidKp').value;
+  const ki = document.getElementById('pidKi').value;
+  const kd = document.getElementById('pidKd').value;
+  const ip = document.getElementById('robotControllerIP').value.trim();
+  const port = document.getElementById('robotPort').value.trim();
+  robotLog(`PID trimis → Kp=${kp} Ki=${ki} Kd=${kd}`, 'cmd');
+  fetch(`http://${ip}:${port}/pid?kp=${kp}&ki=${ki}&kd=${kd}`, { signal: AbortSignal.timeout(1500) })
+    .then(() => robotLog('PID aplicat cu succes pe robot.', 'ok'))
+    .catch(() => robotLog('PID trimis (confirmat local în demo).', 'info'));
+}
+
+// ── Quality slider ────────────────────────────────────────────────────────────
+document.getElementById('camQuality')?.addEventListener('input', function() {
+  document.getElementById('camQualityVal').textContent = this.value;
+});
+
+// ── Keyboard WASD / arrows ────────────────────────────────────────────────────
+const keyMap = { ArrowUp: 'F', KeyW: 'F', ArrowDown: 'B', KeyS: 'B', ArrowLeft: 'L', KeyA: 'L', ArrowRight: 'R', KeyD: 'R' };
+let keyActive = {};
+document.addEventListener('keydown', e => {
+  const panel = document.getElementById('robot');
+  if (!panel || !panel.classList.contains('active')) return;
+  if (keyMap[e.code] && !keyActive[e.code]) {
+    keyActive[e.code] = true;
+    robotCmd(keyMap[e.code]);
+    const btnIds = { F: 'btnUp', B: 'btnDown', L: 'btnLeft', R: 'btnRight' };
+    const btn = document.getElementById(btnIds[keyMap[e.code]]);
+    if (btn) btn.classList.add('pressed');
+  }
+});
+document.addEventListener('keyup', e => {
+  const panel = document.getElementById('robot');
+  if (!panel || !panel.classList.contains('active')) return;
+  if (keyMap[e.code]) {
+    keyActive[e.code] = false;
+    robotCmd('S');
+    const btnIds = { F: 'btnUp', B: 'btnDown', L: 'btnLeft', R: 'btnRight' };
+    const btn = document.getElementById(btnIds[keyMap[e.code]]);
+    if (btn) btn.classList.remove('pressed');
+  }
+});
+
+// ── Responsive grid fix for robot panel ──────────────────────────────────────
+function fixRobotGrids() {
+  const top = document.getElementById('robotTopGrid');
+  const bot = document.getElementById('robotBottomGrid');
+  if (window.innerWidth < 768) {
+    if (top) top.style.gridTemplateColumns = '1fr';
+    if (bot) bot.style.gridTemplateColumns = '1fr';
+  } else {
+    if (top) top.style.gridTemplateColumns = '340px 1fr';
+    if (bot) bot.style.gridTemplateColumns = '1fr 320px';
+  }
+}
+window.addEventListener('resize', fixRobotGrids);
+fixRobotGrids();
+
+
+labMassRange.addEventListener('input',updateLabStatic);
+
+function resizeLabCanvas(){
+  const rect=labCanvas.parentElement.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  labCanvas.width=rect.width*dpr;
+  labCanvas.height=240*dpr;
+  labCanvas.style.width=rect.width+'px';
+  labCanvas.style.height='240px';
+  labCtx.scale(dpr,dpr);
+  updateLabStatic();
+}
+window.addEventListener('resize',resizeLabCanvas);
+setTimeout(resizeLabCanvas,100);
+updateLabStatic();
+
+// ─── QUIZ ─────────────────────────────────────────────────────────────────────
+const quizQuestions = [
+  {q:"1. În MRU, viteza este:", options:["variabilă","constantă","zero","mereu negativă"], a:1, fb:"În MRU, viteza rămâne constantă."},
+  {q:"2. În MRU, accelerația este:", options:["constantă și pozitivă","variabilă","zero","mai mare decât viteza"], a:2, fb:"În MRU, accelerația este zero."},
+  {q:"3. Formula poziției în MRU este:", options:["x = x₀ + v·t","v = v₀ + a·t","F = m·a","a = Δv/Δt"], a:0, fb:"Poziția în MRU se calculează cu x = x₀ + v·t."},
+  {q:"4. În MRUV, accelerația este:", options:["zero","constantă","mereu negativă","egală cu timpul"], a:1, fb:"În MRUV, accelerația este constantă."},
+  {q:"5. Formula vitezei în MRUV este:", options:["x = x₀ + v·t","v = v₀ + a·t","F = m·a","v = x/t"], a:1, fb:"Formula corectă este v = v₀ + a·t."},
+  {q:"6. Formula poziției în MRUV este:", options:["x = x₀ + v₀t + ½at²","x = v/t","a = F/m","v = x·t"], a:0, fb:"Poziția în MRUV se calculează cu x = x₀ + v₀t + ½at²."},
+  {q:"7. A doua lege a lui Newton este:", options:["v = v₀ + a·t","x = x₀ + v·t","F = m·a","P = m·g"], a:2, fb:"A doua lege a lui Newton este F = m·a."},
+  {q:"8. Dacă forța crește și masa rămâne constantă, accelerația:", options:["scade","rămâne zero","crește","devine negativă"], a:2, fb:"Accelerația crește dacă forța crește și masa rămâne constantă."},
+  {q:"9. Dacă masa crește și forța rămâne constantă, accelerația:", options:["crește","scade","rămâne aceeași","devine infinită"], a:1, fb:"Accelerația scade când masa crește la aceeași forță."},
+  {q:"10. Unitatea de măsură pentru accelerație este:", options:["m/s","N","kg","m/s²"], a:3, fb:"Accelerația se măsoară în m/s²."}
+];
+const quizContainer = document.getElementById('quizContainer');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const resultText = document.getElementById('resultText');
+// selected[idx] = option index the user has clicked but not confirmed yet (-1 = none)
+// answered[idx] = true only after confirming
+let quizScore = 0;
+let answered = new Array(quizQuestions.length).fill(false);
+let selected = new Array(quizQuestions.length).fill(-1);
+
+function renderQuiz(){
+  quizContainer.innerHTML='';
+  quizQuestions.forEach((item,idx)=>{
+    const card=document.createElement('div');
+    card.className='card'; card.style.cssText='padding:1.5rem;';
+    card.innerHTML=`<h3 style="font-family:var(--head);font-weight:700;font-size:1rem;margin-bottom:1rem;color:var(--text);">${item.q}</h3>`;
+    const wrap=document.createElement('div'); wrap.style.display='flex'; wrap.style.flexDirection='column'; wrap.style.gap='0.5rem';
+    const fb=document.createElement('p'); fb.style.cssText='font-size:0.875rem;font-weight:600;margin-top:0.75rem;font-family:var(--mono);';
+
+    // Confirm button — only shows once a selection is made
+    const confirmBtn=document.createElement('button');
+    confirmBtn.className='btn-primary';
+    confirmBtn.style.cssText='margin-top:0.75rem;display:none;justify-content:center;padding:0.55rem 1.25rem;font-size:0.85rem;';
+    confirmBtn.textContent='✔ Confirmă răspunsul';
+
+    item.options.forEach((opt,oi)=>{
+      const btn=document.createElement('button');
+      btn.className='quiz-option'; btn.textContent=opt;
+      // If already answered from a previous render, restore final state
+      if(answered[idx]){
+        btn.disabled=true;
+        if(oi===item.a) btn.classList.add('correct');
+        else if(oi===selected[idx]) btn.classList.add('wrong');
+      }
+      btn.addEventListener('click',()=>{
+        if(answered[idx]) return;
+        selected[idx]=oi;
+        // Highlight selection, clear others
+        wrap.querySelectorAll('button').forEach(b=>{
+          b.classList.remove('selected-opt');
+          b.style.borderColor=''; b.style.background='';
+        });
+        btn.style.borderColor='var(--cyan)';
+        btn.style.background='rgba(0,212,255,0.08)';
+        btn.classList.add('selected-opt');
+        confirmBtn.style.display='flex';
+      });
+      wrap.appendChild(btn);
+    });
+
+    confirmBtn.addEventListener('click',()=>{
+      if(answered[idx]||selected[idx]===-1) return;
+      answered[idx]=true;
+      wrap.querySelectorAll('button').forEach(b=>{
+        b.disabled=true;
+        b.style.borderColor=''; b.style.background='';
+        b.classList.remove('selected-opt');
+      });
+      confirmBtn.style.display='none';
+      const chosenBtn=wrap.querySelectorAll('button')[selected[idx]];
+      if(selected[idx]===item.a){
+        chosenBtn.classList.add('correct');
+        fb.textContent='✓ '+item.fb; fb.style.color='var(--green)';
+        quizScore++;
+      } else {
+        chosenBtn.classList.add('wrong');
+        wrap.querySelectorAll('button')[item.a].classList.add('correct');
+        fb.textContent='✗ '+item.fb; fb.style.color='var(--red)';
+      }
+      scoreDisplay.textContent=`${quizScore} / 10`;
+    });
+
+    // Restore pending selection (if user selected but didn't confirm before re-render)
+    if(!answered[idx]&&selected[idx]!==-1){
+      const s=wrap.querySelectorAll('button')[selected[idx]];
+      if(s){
+        s.style.borderColor='var(--cyan)';
+        s.style.background='rgba(0,212,255,0.08)';
+        confirmBtn.style.display='flex';
+      }
+    }
+
+    card.appendChild(wrap); card.appendChild(confirmBtn); card.appendChild(fb);
+    quizContainer.appendChild(card);
+  });
+}
+renderQuiz();
+
+document.getElementById('finishBtn').addEventListener('click',()=>{
+  const count=answered.filter(Boolean).length;
+  if(count<10){ resultText.textContent=`Ai răspuns la ${count} din 10 întrebări. Scorul este ${quizScore}/10.`; return; }
+  const msgs=['⚡ Mai exersează puțin.','📈 Rezultat bun!','🎯 Foarte bine!','🏆 Excelent! Perfect!'];
+  const mi = quizScore<=4?0:quizScore<=7?1:quizScore<=9?2:3;
+  resultText.textContent=`Ai obținut ${quizScore}/10. ${msgs[mi]}`;
+  resultText.style.color = quizScore>7?'var(--green)':quizScore>4?'var(--cyan)':'var(--orange)';
+});
+document.getElementById('resetQuizBtn').addEventListener('click',()=>{
+  quizScore=0;
+  answered=new Array(quizQuestions.length).fill(false);
+  selected=new Array(quizQuestions.length).fill(-1);
+  scoreDisplay.textContent='0 / 10'; resultText.textContent='Apasă „Finalizează" după ce răspunzi.';
+  resultText.style.color=''; renderQuiz();
+});
+
+</script>
+</body>
+</html>
