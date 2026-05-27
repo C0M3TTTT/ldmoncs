@@ -2935,7 +2935,6 @@ function triggerRobotAccessCheck() {
   if (robotCheckInProgress) return;
   robotCheckInProgress = true;
 
-  // Show the robot panel with checking overlay
   _doOpenPanel('robot');
   showRobotOverlay('checking');
 
@@ -2944,23 +2943,24 @@ function triggerRobotAccessCheck() {
   const checkIpEl = document.getElementById('raoCheckIp');
   if (checkIpEl) checkIpEl.textContent = ip;
 
-  // Attempt to reach the robot gateway IP
   const t0 = Date.now();
-  fetch(`http://${ip}:${port}/`, {
+  // Folosim /status în loc de / — are CORS headers în firmware
+  fetch(`http://${ip}:${port}/status`, {
     method: 'GET',
     signal: AbortSignal.timeout(3500),
     cache: 'no-store'
   })
   .then(r => {
-    // Any HTTP response = robot AP reachable
     robotCheckInProgress = false;
     showRobotOverlay('none');
     robotLog(`Rețea robot detectată (${ip}) în ${Date.now()-t0}ms`, 'ok');
   })
   .catch(() => {
-    // No response = not connected to robot WiFi
     robotCheckInProgress = false;
-    showRobotOverlay('error');
+    // Nu mai blocăm — permitem accesul și logăm avertisment
+    showRobotOverlay('none');
+    robotLog(`Nu s-a putut verifica automat conexiunea la ${ip}.`, 'err');
+    robotLog('Dacă ești conectat la WiFi-ul robotului, apasă "Conectează".', 'info');
   });
 }
 
