@@ -2799,13 +2799,13 @@ render();
           <div style="font-family:var(--mono); font-size:0.65rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:1rem;">🕹 Control manual</div>
           <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:0.5rem; max-width:180px; margin:0 auto 1rem;">
             <div></div>
-            <button class="robot-dpad" id="btnUp" data-cmd="F" onmousedown="robotCmd('F')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('F')" ontouchend="robotCmd('S')">▲</button>
+            <button class="robot-dpad" id="btnUp" data-cmd="F" onmousedown="robotCmd('F')" onmouseup="robotCmd('S')" ontouchstart="event.preventDefault();robotCmd('F')" ontouchend="event.preventDefault();robotCmd('S')">▲</button>
             <div></div>
-            <button class="robot-dpad" id="btnLeft" data-cmd="L" onmousedown="robotCmd('L')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('L')" ontouchend="robotCmd('S')">◄</button>
-            <button class="robot-dpad" style="background:rgba(255,71,87,0.15); border-color:rgba(255,71,87,0.3); color:var(--red);" onmousedown="robotCmd('S')" ontouchstart="robotCmd('S')">■</button>
-            <button class="robot-dpad" id="btnRight" data-cmd="R" onmousedown="robotCmd('R')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('R')" ontouchend="robotCmd('S')">►</button>
+            <button class="robot-dpad" id="btnLeft" data-cmd="L" onmousedown="robotCmd('L')" onmouseup="robotCmd('S')" ontouchstart="event.preventDefault();robotCmd('L')" ontouchend="event.preventDefault();robotCmd('S')">◄</button>
+            <button class="robot-dpad" style="background:rgba(255,71,87,0.15); border-color:rgba(255,71,87,0.3); color:var(--red);" onmousedown="robotCmd('S')" ontouchstart="event.preventDefault();robotCmd('S')">■</button>
+            <button class="robot-dpad" id="btnRight" data-cmd="R" onmousedown="robotCmd('R')" onmouseup="robotCmd('S')" ontouchstart="event.preventDefault();robotCmd('R')" ontouchend="event.preventDefault();robotCmd('S')">►</button>
             <div></div>
-            <button class="robot-dpad" id="btnDown" data-cmd="B" onmousedown="robotCmd('B')" onmouseup="robotCmd('S')" ontouchstart="robotCmd('B')" ontouchend="robotCmd('S')">▼</button>
+            <button class="robot-dpad" id="btnDown" data-cmd="B" onmousedown="robotCmd('B')" onmouseup="robotCmd('S')" ontouchstart="event.preventDefault();robotCmd('B')" ontouchend="event.preventDefault();robotCmd('S')">▼</button>
             <div></div>
           </div>
           <div style="display:flex; gap:0.5rem;">
@@ -2922,7 +2922,9 @@ function _doOpenPanel(id) {
   mobileNavButtons.forEach(b => b.classList.toggle('active', b.dataset.panel === id));
   const target = document.getElementById(id);
   if(target) { target.style.display = 'block'; target.classList.add('active'); }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id !== 'robot') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 // ─── ROBOT ACCESS GATE ────────────────────────────────────────────────────────
@@ -3656,7 +3658,7 @@ function robotLog(msg, type) {
   const ph = el.querySelector('div');
   if (ph && ph.textContent.includes('Log gol')) ph.remove();
   el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
   // Keep max 60 lines
   while (el.children.length > 60) el.removeChild(el.firstChild);
 }
